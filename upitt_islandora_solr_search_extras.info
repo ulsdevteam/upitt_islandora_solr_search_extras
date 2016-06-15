@@ -1,0 +1,8 @@
+name = University of Pittsburgh SOLR Search Extras
+description = To provide additional features upon the Islandora Solr Search module
+package = Islandora Tools
+version = 7.x-1.6
+core = 7.x
+dependencies[] = islandora
+dependencies[] = islandora_solr
+configure = admin/islandora/tools/upitt_islandora_solr_search_extras

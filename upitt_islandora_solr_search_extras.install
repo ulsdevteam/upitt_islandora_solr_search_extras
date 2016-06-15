@@ -1,0 +1,13 @@
+<?php
+
+/**
+ * @file
+ * Install/uninstall hooks.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function upitt_islandora_solr_search_extras_uninstall() {
+  variable_del('upitt_islandora_solr_search_extras_showparent_searchresults');
+}
