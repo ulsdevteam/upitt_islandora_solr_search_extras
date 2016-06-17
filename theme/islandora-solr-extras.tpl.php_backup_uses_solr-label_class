@@ -20,7 +20,7 @@
       <div class="islandora-solr-search-result clear-block <?php print $row_result % 2 == 0 ? 'odd' : 'even'; ?>">
         <div class="islandora-solr-search-result-inner">
           <!-- Thumbnail -->
-          <dl class="solr-thumb">
+          <dl>
             <dt>
               <?php print $result['thumbnail']; ?>
             </dt>
@@ -30,6 +30,23 @@
           <dl class="solr-fields islandora-inline-metadata">
             <?php foreach($result['solr_doc'] as $key => $value): ?>
               <dt class="solr-label <?php print $value['class']; ?>">
+                <?php print $value['label']; ?>
+              </dt>
+              <dd class="solr-value <?php print $value['class']; ?>">
+                <?php print $value['value']; ?>
+              </dd>
+            <?php endforeach; ?>
+          </dl>
+            <?php if (isset($result['page_thumbnail'])) : ?>
+          <dl>
+            <dt>
+               <?php print $result['page_thumbnail']; ?>
+            </dt>
+          </dl>
+            <?php endif; ?>
+          <dl class="solr-fields islandora-inline-metadata">
+            <?php foreach($result['page_solr_doc'] as $key => $value): ?>
+              <dt class="solr-label <?php print $value['class']; ?>" style="color:#999">
                 <?php print $value['label']; ?>
               </dt>
               <dd class="solr-value <?php print $value['class']; ?>">

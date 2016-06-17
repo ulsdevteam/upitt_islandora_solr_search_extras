@@ -19,7 +19,8 @@ function upitt_islandora_solr_search_extras_menu() {
       'page callback' => 'drupal_get_form',
       'page arguments' => array('upitt_islandora_solr_search_extras_search_specific', 2),
       'type' => MENU_CALLBACK,
-      'access arguments' => array(UPITT_ISLANDORA_SOLR_SEARCH_EXTRAS_MANAGE),
+      'access callback' => 'islandora_object_access_callback',
+      'access arguments' => array(ISLANDORA_VIEW_OBJECTS, 2),
     ),
     'admin/islandora/tools/upitt_islandora_solr_search_extras' => array(
       'title' => 'University of Pittsburgh IsMemberOfSite Settings',
@@ -39,17 +40,11 @@ function upitt_islandora_solr_search_extras_search_specific($form, &$form_state,
   $search_field = isset($_POST['field']) ? $_POST['field'] : '';  
   if ($search_term) { 
     if ($search_field) {
-      /* $solr_query = format_string('!search_field:*!search_term*', 
-        array('!search_field' => $search_field,
-              '!search_term' => $search_term
-          )
-        ); */
-      $solr_query = format_string('(!search_field:*!search_term*)', 
-//      $solr_query = format_string('(!field:!value OR !field2:!value OR !field3:!value) AND (!search_field:*!search_term*)', 
-        array(/* '!field' => 'RELS_EXT_isMemberOfCollection_uri_ms',
+      $solr_query = format_string('(!field:!value OR !field2:!value OR !field3:!value) AND (!search_field:*!search_term*)', 
+        array('!field' => 'RELS_EXT_isMemberOfCollection_uri_ms',
               '!field2' => 'RELS_EXT_isPageOf_uri_ms',
               '!field3' => 'RELS_EXT_isMemberOf_uri_ms',
-              '!value' => Apache_Solr_Service::escape('info:fedora/' . $object), */
+              '!value' => Apache_Solr_Service::escape('info:fedora/' . $object),
               '!search_field' => $search_field,
               '!search_term' => $search_term
           )
@@ -57,7 +52,7 @@ function upitt_islandora_solr_search_extras_search_specific($form, &$form_state,
     }
     else {
       // need to get the solr system's setting for this!
-      $solr_query = format_string('(!field:!value OR !field2:!value OR !field3:!value) AND (fgs_label_s:*!search_term* OR dc.title:*!search_term* OR mods_titleInfo_title_ms:*!search_term*)', 
+      $solr_query = format_string('(!field:!value OR !field2:!value OR !field3:!value) AND (catch_all_fields_mt:*!search_term* OR dc.title:*!search_term* OR dc.subject:*!search_term* OR mods_abstract_mt:*!search_term* OR mods_originInfo_dateOther_ms:*!search_term*)', 
         array('!field' => 'RELS_EXT_isMemberOfCollection_uri_ms',
               '!field2' => 'RELS_EXT_isPageOf_uri_ms',
               '!field3' => 'RELS_EXT_isMemberOf_uri_ms',
@@ -75,6 +70,8 @@ function upitt_islandora_solr_search_extras_search_specific($form, &$form_state,
   }
   $options = array('query' => array('type' => 'dismax',
       'f' => array($solr_query)));
+  drupal_set_message(format_string('Searching for <em>!term</em> in !object', 
+    array('!object' => $object->label, '!term' => $search_term)));
   drupal_goto('islandora/search', $options);
 }
 
@@ -86,6 +83,18 @@ function upitt_islandora_solr_search_extras_theme() {
     'islandora_basic_collection_wrapper' => array(
       'template' => 'theme/islandora-basic-collection-wrapper',
       'variables' => array('islandora_object' => NULL),
+    ),
+    'islandora_objects_grid' => array(
+      'template' => 'theme/islandora-objects-grid',
+      'variables' => array('islandora_object' => NULL, 'objects' => NULL),
+    ),
+    'islandora_solr_extras' => array(
+      'template' => 'theme/islandora-solr-extras',
+      'variables' => array(
+        'results' => NULL,
+        'elements' => array(),
+        'pids' => array(),
+      ),
     ),
   );
 }   
@@ -107,6 +116,9 @@ function upitt_islandora_solr_search_extras_theme() {
  *   Returns the themed solr search results.
  */
 function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_results) {
+  $path = drupal_get_path('module', 'upitt_islandora_solr_search_extras');
+  drupal_add_css("$path/css/solr_search_extras.css");
+
   if (variable_get('upitt_islandora_solr_search_extras_showparent_searchresults')) {
     $solr_results = islandora_solr_prepare_solr_results($solr_results);
     $object_results = $solr_results['response']['objects'];
@@ -118,21 +130,40 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
     foreach ($object_results as $k=>$solr_result_object) {
       if (isset($object_results[$k]['datastreams'])) {
         if (array_search('MODS', $object_results[$k]['datastreams']) === FALSE) {
-          if (!(isset($object_results[$k]['solr_doc']['RELS_EXT_isMemberOfCollection_uri_ms'])) && (isset($object_results[$k]['object_url']))) {
+          if (((!(isset($object_results[$k]['solr_doc']['RELS_EXT_isMemberOfCollection_uri_ms']))) ||
+               (!(isset($object_results[$k]['solr_doc']['RELS_EXT_isPageOf_uri_ms']))) ||
+               (!(isset($object_results[$k]['solr_doc']['RELS_EXT_isMemberOf_uri_ms'])))) && 
+              (isset($object_results[$k]['object_url']))) {
             $solr_doc = _islandora_solr_pid_parent_search($object_results[$k]['PID']);
             if (is_array($solr_doc)) {
               // Keep the existing title value
-              $tmp_title = $object_results[$k]['solr_doc']['dc.title']['value'];
+              $page = $object_results[$k];
+              $tmp_title = $page['dc.title']['value'];
               $object_results[$k] = $solr_doc;
-              $object_results[$k]['solr_doc']['dc.title']['value'] = $tmp_title;
+              $object_results[$k]['page_solr_doc'] = $page['solr_doc'];
+              if (isset($page['datastreams']) && array_search('TN', $page['datastreams'])) {
+                $object_results[$k]['page_thumbnail'] = theme('image', array(
+                  'path' => url("islandora/object/{$page['PID']}/datastream/TN/view"),
+                  'attributes' => array(),
+                  'width' => '60px',
+                ));
+              } else {
+                $object_results[$k]['page_thumbnail'] = 'no thumb<br>';
+              }
+              $object_results[$k]['solr_doc']['dc.title']['value'] = $tmp_title . 
+                ' in ' . l($solr_doc['solr_doc']['dc.title']['value'], $solr_doc['object_url']);
             }
+            $object_results[$k]['thumbnail'] = theme('image', array(
+              'path' => url("islandora/object/{$object_results[$k]['PID']}/datastream/TN/view"),
+              'attributes' => array(),
+              'width' => '170px',
+            ));
           }
         }
       }
     }
-
     // Return themed search results.
-    return theme('islandora_solr', array('results' => $object_results, 'elements' => $elements));
+    return theme('islandora_solr_extras', array('results' => $object_results, 'elements' => $elements));
   }
 }
 
@@ -145,8 +176,7 @@ function _islandora_solr_pid_parent_search($child_pid) {
   $_islandora_solr_queryclass = new IslandoraSolrQueryProcessor();
 
   $islandora_object = islandora_object_load($child_pid);
-  // need to consider isMemberOf, isMemberOfCollection, isPageOf
-  
+
   $parent = $islandora_object->getParents();
   $page_parents = $islandora_object->relationships->get(NULL, 'isPageOf');
   $page_parent_ids = array();
@@ -154,7 +184,6 @@ function _islandora_solr_pid_parent_search($child_pid) {
     $page_parent_ids[] = $page_parent['object']['value'];
   }
   $parent = array_merge($parent, $page_parent_ids);
-
   // Get the first value if there happens to be more than one Parent.
   $pid = str_replace(array("islandora/object/", "/", ":"), array("", "\/", "\:"), array_pop($parent));
   if ($pid) {
@@ -179,20 +208,33 @@ function upitt_islandora_solr_search_extras_preprocess_islandora_basic_collectio
   $variables['collection_search'] = drupal_render($form);
 }
 
+function upitt_islandora_solr_search_extras_preprocess_islandora_objects_grid(&$variables) {
+  $islandora_object = (isset($variables['islandora_object']) ? $variables['islandora_object'] : NULL);
+  $islandora_object = menu_get_object('islandora_object', 2);
+
+  if (!is_object($islandora_object)) { 
+    // Take first object and use relationships to get the parent object.
+    $child_object = $variables['objects'][0];
+    $link = $child_object['link'];
+    error_log($link);
+  }
+  $form = drupal_get_form('search_in_collection', $islandora_object->id, $islandora_object->label);
+  $variables['collection_search'] = drupal_render($form);
+}
+
 function upitt_islandora_solr_search_extras_form_alter(&$form, $form_state, $form_id) {
   if($form_id == 'search_in_collection' && isset($form['islandora_object_id']) && $form['islandora_object_id']['#value'] <> '') {
     $form['#action'] = '/islandora/object/' . $form['islandora_object_id']['#value'] . '/searching_collection' ;
   }
 }
 
-function search_in_collection(array $form, array &$form_state, $id) {
+function search_in_collection(array $form, array &$form_state, $id, $objLabel) {
   $form = array(
     'searchterm' => array(
       '#type' => 'textfield',
-      '#title' => t('Search within Collection'),
-      '#description' => t('in "' . $id . '"'),
+      '#title' => t('Search within "' . $objLabel . '"'),
       '#value' => '',
-      '#defaultvalue' => 'foobar',
+      '#defaultvalue' => '',
       '#size' => 50,
     ),
     'field' => array(
