@@ -38,12 +38,15 @@
                 <?php print $value['value']; ?>
               </dd>
             <?php endforeach; ?>
-            <?php if (isset($result['page_thumbnail'])) : ?>
-            <dt style="padding-left:70px">
-               <?php print $result['page_thumbnail']; ?>
-            </dt>
-            <?php endif; ?>
           </dl>
+          <?php if (isset($result['page_thumbnail'])) : ?>
+          <dl class="solr-page-thumb">
+             <dt>
+                 <?php print $result['page_thumbnail']; ?>
+             </dt>
+            <dd></dd>
+          </dl>
+          <?php endif; ?>
           <dl class="solr-fields islandora-inline-metadata">
           <?php if (count($result['page_solr_doc']) > 0) : ?>
             <dt class="solr-field-orig">Page values:</dt>
@@ -60,3 +63,4 @@
     <?php endforeach; ?>
   </div>
 <?php endif; ?>
+

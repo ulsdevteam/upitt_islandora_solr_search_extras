@@ -7,4 +7,13 @@
   color: #000;
 }
 
+dt, .solr-fields dd, dl.solr-fields {
+  border-top: none !important;
+}
 
+.solr-page-thumb {
+  margin: 0 38px;
+  float: left;
+  clear: both;
+  border: 1px solid #ccc;
+}

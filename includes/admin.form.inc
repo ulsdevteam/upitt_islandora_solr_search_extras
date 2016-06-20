@@ -33,7 +33,7 @@ function upitt_islandora_solr_search_extras_admin_settings(array $form, array &$
       '#value' => t('Reset to defaults'),
     ),
   );
-  
+
   return $form;
 }
 
@@ -58,3 +58,4 @@ function upitt_islandora_solr_search_extras_admin_settings_submit(array $form, a
       break;
   }
 }
+
