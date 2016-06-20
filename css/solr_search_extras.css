@@ -1,3 +1,7 @@
+.fieldset-wrapper {
+  margin-left: 0 !important;
+}
+
 .solr-field-orig {
   color: #555;
   font-size: smaller;

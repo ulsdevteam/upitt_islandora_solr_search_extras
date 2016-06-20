@@ -158,34 +158,41 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
                 $page_image = theme('image', array(
                   'path' => url("islandora/object/{$page['PID']}/datastream/TN/view"),
                   'attributes' => array(),
-                  'width' => '48px',
+                  'width' => '60px',
                 ));
                 $object_results[$k]['page_thumbnail'] = l($page_image, $page['object_url'], $options);
-              } else {
-                $object_results[$k]['page_thumbnail'] = 'no thumb<br>';
               }
-              $object_results[$k]['solr_doc']['dc.title']['value'] = $tmp_title .
+              if ($tmp_title) {
+                $object_results[$k]['solr_doc']['dc.title']['value'] = $tmp_title .
                 ' in ' . l($solr_doc['solr_doc']['dc.title']['value'], $solr_doc['object_url']);
+              }
             }
           }
         }
       }
       $path = url($object_results[$k]['thumbnail_url'], array('query' => $object_results[$k]['thumbnail_url_params']));
-      $image = theme('image', array('path' => $path));
+      if ($path <> '/') {
+        $image = theme('image', array('path' => $path));
 
-      $options = array('html' => TRUE);
-      if (isset($object_results[$k]['object_label'])) {
-        $options['attributes']['title'] = $object_results[$k]['object_label'];
-      }
-      if (isset($object_results[$k]['object_url_params'])) {
-        $options['query'] = $object_results[$k]['object_url_params'];
-      }
-      if (isset($object_results[$k]['object_url_fragment'])) {
-        $options['fragment'] = $object_results[$k]['object_url_fragment'];
-      }
+        $options = array('html' => TRUE);
+        if (isset($object_results[$k]['object_label'])) {
+          $options['attributes']['title'] = $object_results[$k]['object_label'];
+        }
+        if (isset($object_results[$k]['object_url_params'])) {
+          $options['query'] = $object_results[$k]['object_url_params'];
+        }
+        if (isset($object_results[$k]['object_url_fragment'])) {
+          $options['fragment'] = $object_results[$k]['object_url_fragment'];
+        }
       
-      // The link may be preferred to take the user to the page result.
-      $object_results[$k]['thumbnail'] = l($image, $object_results[$k]['object_url'], $options);
+        // The link may be preferred to take the user to the page result.
+        $fragment = ($page['object_url_fragment'] <> '') ? '#' . $page['object_url_fragment'] : '';
+        $object_results[$k]['thumbnail'] = l($image, $object_results[$k]['object_url'] . $fragment, $options);
+      }
+      else {
+        $object_results[$k]['thumbnail'] = $object_results[$k]['page_thumbnail'];
+        $object_results[$k]['page_thumbnail'] = '';
+      }
     }
     // Return themed search results.
     return theme('islandora_solr_extras', array('results' => $object_results, 'elements' => $elements));
@@ -201,7 +208,6 @@ function _islandora_solr_pid_parent_search($child_pid) {
   $_islandora_solr_queryclass = new IslandoraSolrQueryProcessor();
 
   $islandora_object = islandora_object_load($child_pid);
-
   $parent = $islandora_object->getParents();
   $page_parents = $islandora_object->relationships->get(NULL, 'isPageOf');
   $page_parent_ids = array();
@@ -213,17 +219,32 @@ function _islandora_solr_pid_parent_search($child_pid) {
   $pid = str_replace(array("islandora/object/", "/", ":"), array("", "\/", "\:"), array_pop($parent));
   if ($pid) {
     // Build and execute Apache Solr query.
-    $query = 'PID:'.$pid;
-    $_islandora_solr_queryclass->buildAndExecuteQuery($query, NULL);
+    $qf = variable_get('islandora_solr_query_fields', 'dc.title^5 dc.subject^2 dc.description^2 dc.creator^2 dc.contributor^1 dc.type');
 
-    if (empty($_islandora_solr_queryclass->islandoraSolrResult)) {
-      return t('Error searching Solr index.');
+    module_load_include('inc', 'islandora_solr_search', 'includes/utilities');
+    $query_processor = new IslandoraSolrQueryProcessor();
+    $query_processor->solrQuery = 'PID:'.$pid; // 'RELS_EXT_hasModel_uri_s:(*' . str_replace(":", "\:", implode("* OR *", $models)) . '*)';
+    $query_processor->solrStart = 0;
+    $query_processor->solrLimit = 1;
+    $query_processor->solrParams = array(
+      'fl' => "PID,fgs_label_mt,RELS_EXT_hasModel_uri_s",
+      'fq' => "", // RELS_EXT_isPageOf_uri_s:",
+    );
+    $url = parse_url(variable_get('islandora_solr_url', 'localhost:8080/solr'));
+    $solr = new Apache_Solr_Service($url['host'], $url['port'], $url['path'] . '/');
+    $solr->setCreateDocuments(FALSE);
+    try {
+      $results = $solr->search($query_processor->solrQuery, $query_processor->solrStart, $query_processor->solrLimit, $query_processor->solrParams, 'GET');
+      $tmp = json_decode($results->getRawResponse(), TRUE);
+      $results = array();
+      foreach ($tmp['response']['docs'] as $trip) {
+        $results[$trip['PID']] = isset($trip['fgs_label_mt'][0]) ?$trip['fgs_label_mt'][0] . ' (' . $trip['PID'] . ')' : $trip['PID'];
+      }
+      return $results;
     }
-    $arr = $_islandora_solr_queryclass->islandoraSolrResult['response']['objects'][0];
-    foreach ($arr['solr_doc'] as $key=>$val) {
-      $arr['solr_doc'][$key] = array('label' => $key, 'class' => $key, 'value' => $val[0]);
+    catch (Exception $e) {
+      return array();
     }
-    return $arr;
   }
 }
 
@@ -241,7 +262,6 @@ function upitt_islandora_solr_search_extras_preprocess_islandora_objects_grid(&$
     // Take first object and use relationships to get the parent object.
     $child_object = $variables['objects'][0];
     $link = $child_object['link'];
-    error_log($link);
   }
   $form = drupal_get_form('search_in_collection', $islandora_object->id, $islandora_object->label);
   $variables['collection_search'] = drupal_render($form);

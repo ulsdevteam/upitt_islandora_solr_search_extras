@@ -39,7 +39,7 @@
               </dd>
             <?php endforeach; ?>
           </dl>
-          <?php if (isset($result['page_thumbnail'])) : ?>
+          <?php if ($result['page_thumbnail']) : ?>
           <dl class="solr-page-thumb">
              <dt>
                  <?php print $result['page_thumbnail']; ?>
