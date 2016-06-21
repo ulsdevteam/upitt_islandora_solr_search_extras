@@ -16,8 +16,6 @@
   <div class="islandora islandora-solr-search-results">
     <?php $row_result = 0; ?>
     <?php foreach($results as $key => $result): ?>
-<?php // echo "<pre>". print_r($result, true)."</pre>";
- ?>
       <!-- Search result -->
       <div class="islandora-solr-search-result clear-block <?php print $row_result % 2 == 0 ? 'odd' : 'even'; ?>">
         <div class="islandora-solr-search-result-inner">
@@ -30,9 +28,6 @@
           </dl>
           <!-- Metadata -->
           <dl class="solr-fields islandora-inline-metadata">
-            <?php if (count($result['page_solr_doc']) > 0) : ?>
-            <dt>Book values:</dt>
-            <?php endif; ?>
             <?php foreach($result['solr_doc'] as $key => $value): ?>
               <dd class="solr-value solr-field-parent <?php print $value['class']; ?>">
                 <?php print $value['value']; ?>
@@ -48,9 +43,6 @@
           </dl>
           <?php endif; ?>
           <dl class="solr-fields islandora-inline-metadata">
-          <?php if (count($result['page_solr_doc']) > 0) : ?>
-            <dt class="solr-field-orig">Page values:</dt>
-          <?php endif; ?>
             <?php foreach($result['page_solr_doc'] as $key => $value): ?>
               <dd class="solr-value solr-field-orig <?php print $value['class']; ?>">
                 <?php print $value['value']; ?>
@@ -63,4 +55,5 @@
     <?php endforeach; ?>
   </div>
 <?php endif; ?>
+
 

@@ -1,4 +1,4 @@
-div.fieldset-wrapper {
+.fieldset-wrapper {
   margin-left: 0 !important;
 }
 
@@ -16,8 +16,7 @@ dt, .solr-fields dd, dl.solr-fields {
 }
 
 .solr-page-thumb {
-  margin: 0 38px;
   float: left;
   clear: both;
-  border: 1px solid #ccc;
+  border: 1px solid #eee;
 }

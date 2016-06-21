@@ -118,9 +118,10 @@ function upitt_islandora_solr_search_extras_theme() {
  *   Returns the themed solr search results.
  */
 function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_results) {
+  $solr_fields = _get_solr_search_fields();
   $path = drupal_get_path('module', 'upitt_islandora_solr_search_extras');
   drupal_add_css("$path/css/solr_search_extras.css");
-
+  $tmp_title = '';
   if (variable_get('upitt_islandora_solr_search_extras_showparent_searchresults')) {
     $solr_results = islandora_solr_prepare_solr_results($solr_results);
     $object_results = $solr_results['response']['objects'];
@@ -133,68 +134,74 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
       if (isset($object_results[$k]['datastreams'])) {
         $object_results[$k]['page_solr_doc'] = array();
         $object_results[$k]['thumbnail'] = $object_results[$k]['page_thumbnail'] = '';
+
+        $path = url($object_results[$k]['thumbnail_url'], array('query' => $object_results[$k]['thumbnail_url_params']));
+        if ($path <> '/') {
+          $image = theme('image', array('path' => $path));
+
+          $options = array('html' => TRUE);
+          if (isset($object_results[$k]['object_label'])) {
+            $options['attributes']['title'] = $object_results[$k]['object_label'];
+          }
+          if (isset($object_results[$k]['object_url_params'])) {
+            $options['query'] = $object_results[$k]['object_url_params'];
+          }
+          if (isset($object_results[$k]['object_url_fragment'])) {
+            $options['fragment'] = $object_results[$k]['object_url_fragment'];
+          }
+          // The link may be preferred to take the user to the page result.
+          $fragment = ($object_results[$k]['object_url_fragment'] <> '') ? '#' . $object_results[$k]['object_url_fragment'] : '';
+          $object_results[$k]['thumbnail'] = l($image, $object_results[$k]['object_url'], $options);
+        }
+        else {
+          $object_results[$k]['thumbnail'] = $object_results[$k]['page_thumbnail'];
+          $object_results[$k]['page_thumbnail'] = '';
+        }
+
         if (array_search('MODS', $object_results[$k]['datastreams']) === FALSE) {
           if (((!(isset($object_results[$k]['solr_doc']['RELS_EXT_isMemberOfCollection_uri_ms']))) ||
                (!(isset($object_results[$k]['solr_doc']['RELS_EXT_isPageOf_uri_ms']))) ||
                (!(isset($object_results[$k]['solr_doc']['RELS_EXT_isMemberOf_uri_ms'])))) &&
               (isset($object_results[$k]['object_url']))) {
-            $solr_doc = _islandora_solr_pid_parent_search($object_results[$k]['PID']);
+            $solr_doc = _islandora_solr_pid_parent_search($object_results[$k]['PID'], $solr_fields);
             if (is_array($solr_doc)) {
               // Keep the existing title value
               if (isset($object_results[$k]['dc.title'])) {
-                $page = $object_results[$k];
-                $tmp_title = $page['dc.title']['value'];
-                $object_results[$k] = $solr_doc;
-                $object_results[$k]['page_solr_doc'] = $page['solr_doc'];
-                if (isset($page['datastreams']) && array_search('TN', $page['datastreams'])) {
-                  $options = array('html' => TRUE);
-                  if (isset($solr_doc['object_label'])) {
-                    $options['attributes']['title'] = $solr_doc['object_label'];
-                  }
-                  if (isset($solr_doc['object_url_params'])) {
-                    $options['query'] = $solr_doc['object_url_params'];
-                  }
-                  if (isset($solr_doc['object_url_fragment'])) {
-                    $options['fragment'] = $solr_doc['object_url_fragment'];
-                  }
-                  $page_image = theme('image', array(
-                    'path' => url("islandora/object/{$page['PID']}/datastream/TN/view"),
-                    'attributes' => array(),
-                    'width' => '60px',
-                  ));
-                  $object_results[$k]['page_thumbnail'] = l($page_image, $page['object_url'], $options);
+                $tmp_title = $object_results[$k]['dc.title']['value'];
+              }
+              $page = $object_results[$k];
+              $object_results[$k]['solr_doc'] = $solr_doc;
+              $object_results[$k]['page_solr_doc'] = $page['solr_doc'];
+   /*
+              if (isset($page['datastreams']) && array_search('TN', $page['datastreams'])) {
+                $options = array('html' => TRUE);
+                if (isset($page['object_label'])) {
+                  $options['attributes']['title'] = $page['object_label'];
                 }
-                if ($tmp_title) {
-                  $object_results[$k]['solr_doc']['dc.title']['value'] = $tmp_title .
-                  ' in ' . l($solr_doc['solr_doc']['dc.title']['value'], $solr_doc['object_url']);
+                if (isset($page['object_url_params'])) {
+                  $options['query'] = $page['object_url_params'];
                 }
-                $path = url($object_results[$k]['thumbnail_url'], array('query' => $object_results[$k]['thumbnail_url_params']));
-                if ($path <> '/') {
-                  $image = theme('image', array('path' => $path));
-
-                  $options = array('html' => TRUE);
-                  if (isset($object_results[$k]['object_label'])) {
-                    $options['attributes']['title'] = $object_results[$k]['object_label'];
-                  }
-                  if (isset($object_results[$k]['object_url_params'])) {
-                    $options['query'] = $object_results[$k]['object_url_params'];
-                  }
-                  if (isset($page['object_url_fragment'])) {
-                    $options['fragment'] = $page['object_url_fragment'];
-                  }
-
-                  // The link may be preferred to take the user to the page result.
-                  $fragment = ($page['object_url_fragment'] <> '') ? '#' . $page['object_url_fragment'] : '';
-                  $object_results[$k]['thumbnail'] = l($image, $object_results[$k]['object_url'], $options);
+                if (isset($page['object_url_fragment'])) {
+                  $options['fragment'] = $page['object_url_fragment'];
                 }
-                else {
-                  $object_results[$k]['thumbnail'] = $object_results[$k]['page_thumbnail'];
-                  $object_results[$k]['page_thumbnail'] = '';
-                }
+                $page_image = theme('image', array(
+                  'path' => url("islandora/object/{$page['PID']}/datastream/TN/view"),
+                  'attributes' => array(),
+                  'width' => '60px',
+                ));
+                $object_results[$k]['page_thumbnail'] = l($page_image, $page['object_url'], $options);
+    */
+              }
+              if ($tmp_title) {
+                $object_results[$k]['solr_doc']['dc.title']['value'] = $tmp_title .
+                ' in ' . l($solr_doc['solr_doc']['dc.title']['value'], $solr_doc['object_url']);
               }
             }
           }
         }
+      }
+      if (($object_results[$k]['solr_doc']['dc.title']['value']) == '') {
+        $object_results[$k]['solr_doc']['dc.title']['value'] = $page['object_label'];
       }
     }
     // Return themed search results.
@@ -205,8 +212,9 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
 /**
  * Helper function to lookup the parent object based on a PID value.
  */
-function _islandora_solr_pid_parent_search($child_pid) {
+function _islandora_solr_pid_parent_search($child_pid, $solr_fields) {
   global $_islandora_solr_queryclass;
+  $solr_fields_csv = implode(",", array_keys($solr_fields));
   // !!! Set the global variable. !!!
   $_islandora_solr_queryclass = new IslandoraSolrQueryProcessor();
 
@@ -222,16 +230,14 @@ function _islandora_solr_pid_parent_search($child_pid) {
   $pid = str_replace(array("islandora/object/", "/", ":"), array("", "\/", "\:"), array_pop($parent));
   if ($pid) {
     // Build and execute Apache Solr query.
-    $qf = variable_get('islandora_solr_query_fields', 'dc.title^5 dc.subject^2 dc.description^2 dc.creator^2 dc.contributor^1 dc.type');
-
     module_load_include('inc', 'islandora_solr_search', 'includes/utilities');
     $query_processor = new IslandoraSolrQueryProcessor();
     $query_processor->solrQuery = 'PID:'.$pid; // 'RELS_EXT_hasModel_uri_s:(*' . str_replace(":", "\:", implode("* OR *", $models)) . '*)';
     $query_processor->solrStart = 0;
     $query_processor->solrLimit = 1;
     $query_processor->solrParams = array(
-      'fl' => "PID,fgs_label_mt,RELS_EXT_hasModel_uri_s",
-      'fq' => "", // RELS_EXT_isPageOf_uri_s:",
+      'fl' => "PID," . $solr_fields_csv,
+      'fq' => variable_get('islandora_solr_base_filter', ''), // RELS_EXT_isPageOf_uri_s:",
     );
     $url = parse_url(variable_get('islandora_solr_url', 'localhost:8080/solr'));
     $solr = new Apache_Solr_Service($url['host'], $url['port'], $url['path'] . '/');
@@ -241,7 +247,14 @@ function _islandora_solr_pid_parent_search($child_pid) {
       $tmp = json_decode($results->getRawResponse(), TRUE);
       $results = array();
       foreach ($tmp['response']['docs'] as $trip) {
-        $results[$trip['PID']] = isset($trip['fgs_label_mt'][0]) ?$trip['fgs_label_mt'][0] . ' (' . $trip['PID'] . ')' : $trip['PID'];
+        $keys = array_keys($trip);
+        foreach ($keys as $key) {
+          if ($key <> 'PID') {
+            $results[$key] = array('label' => $solr_fields[$key]['label'],
+                                   'class' => $solr_fields[$key]['class'],
+                                   'value' => @$trip[$key][0]);
+          }
+        }
       }
       return $results;
     }
@@ -279,7 +292,6 @@ function upitt_islandora_solr_search_extras_form_alter(&$form, $form_state, $for
 function search_in_collection(array $form, array &$form_state, $id, $objLabel) {
   $path = drupal_get_path('module', 'upitt_islandora_solr_search_extras');
   drupal_add_css("$path/css/solr_search_extras.css");
-
   $form = array(
     'options' => array(
       '#type' => 'fieldset',
@@ -320,5 +332,18 @@ function upitt_islandora_solr_search_extras_permission() {
       'description' => t('Manage solr extras.'),
     ),
   );
+}
+
+function _get_solr_search_fields() {
+  $results = db_query("SELECT `solr_field`, `solr_field_settings` FROM islandora_solr_fields WHERE field_type = 'result_fields'");
+  $fields = array();
+  foreach ($results as $row) {
+    $settings = unserialize($row->solr_field_settings);
+    
+    $fields[$row->solr_field] = array('label' => $settings['label'], 
+                                      'class' => $row->solr_field);
+  }
+  
+  return $fields;
 }
 
