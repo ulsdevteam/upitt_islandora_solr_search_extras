@@ -85,7 +85,7 @@ function upitt_islandora_solr_search_extras_theme() {
     'islandora_basic_collection_wrapper' => array(
       'template' => 'theme/islandora-basic-collection-wrapper',
       'variables' => array('islandora_object' => NULL),
-    ),      
+    ),
     'islandora_objects_grid' => array(
       'template' => 'theme/islandora-objects-grid',
       'variables' => array('islandora_object' => NULL, 'objects' => NULL),
@@ -150,7 +150,7 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
             $options['fragment'] = $object_results[$k]['object_url_fragment'];
           }
           // The link may be preferred to take the user to the page result.
-          $fragment = ($object_results[$k]['object_url_fragment'] <> '') ? '#' . $object_results[$k]['object_url_fragment'] : '';
+          $fragment = (isset($object_results[$k]['object_url_fragment']) && $object_results[$k]['object_url_fragment'] <> '') ? '#' . $object_results[$k]['object_url_fragment'] : '';
           $object_results[$k]['thumbnail'] = l($image, $object_results[$k]['object_url'], $options);
         }
         else {
@@ -213,9 +213,7 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
  * Helper function to lookup the parent object based on a PID value.
  */
 function _islandora_solr_pid_parent_search($child_pid, $solr_fields) {
-  global $_islandora_solr_queryclass;
   $solr_fields_csv = implode(",", array_keys($solr_fields));
-  // !!! Set the global variable. !!!
   $_islandora_solr_queryclass = new IslandoraSolrQueryProcessor();
 
   $islandora_object = islandora_object_load($child_pid);
@@ -339,11 +337,11 @@ function _get_solr_search_fields() {
   $fields = array();
   foreach ($results as $row) {
     $settings = unserialize($row->solr_field_settings);
-    
-    $fields[$row->solr_field] = array('label' => $settings['label'], 
+
+    $fields[$row->solr_field] = array('label' => $settings['label'],
                                       'class' => $row->solr_field);
   }
-  
+
   return $fields;
 }
 
