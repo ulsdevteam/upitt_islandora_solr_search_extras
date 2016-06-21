@@ -190,8 +190,8 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
                   'width' => '60px',
                 ));
                 $object_results[$k]['page_thumbnail'] = l($page_image, $page['object_url'], $options);
-    */
               }
+    */
               if ($tmp_title) {
                 $object_results[$k]['solr_doc']['dc.title']['value'] = $tmp_title .
                 ' in ' . l($solr_doc['solr_doc']['dc.title']['value'], $solr_doc['object_url']);
