@@ -23,9 +23,6 @@
         <?php endforeach ?>
       </ul>
     </span>
-    <?php if (isset($collection_search)) {
-      print render($collection_search);
-    } ?>
     <?php print $collection_pager; ?>
     <?php print $collection_content; ?>
     <?php print $collection_pager; ?>

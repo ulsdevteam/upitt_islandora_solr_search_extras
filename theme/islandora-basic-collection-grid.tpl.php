@@ -9,7 +9,7 @@
 ?>
 <?php if (isset($collection_search)) {
   print render($collection_search);
-} ?>    
+} ?>
 <div class="islandora islandora-basic-collection">
   <div class="islandora-basic-collection-grid clearfix">
   <?php foreach($associated_objects_array as $key => $value): ?>

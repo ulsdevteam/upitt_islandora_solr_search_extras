@@ -24,7 +24,6 @@ function upitt_islandora_solr_search_extras_preprocess_islandora_basic_collectio
 }
 
 function upitt_islandora_solr_search_extras_preprocess_islandora_objects_grid(&$variables) {
-  $islandora_object = (isset($variables['islandora_object']) ? $variables['islandora_object'] : NULL);
   $islandora_object = menu_get_object('islandora_object', 2);
 
   if (!is_object($islandora_object)) {
@@ -35,3 +34,16 @@ function upitt_islandora_solr_search_extras_preprocess_islandora_objects_grid(&$
   $form = drupal_get_form('search_in_collection', $islandora_object->id, $islandora_object->label);
   $variables['collection_search'] = drupal_render($form);
 }
+
+function upitt_islandora_solr_search_extras_preprocess_islandora_objects_list(&$variables) {
+  $islandora_object = menu_get_object('islandora_object', 2);
+
+  if (!is_object($islandora_object)) {
+    // Take first object and use relationships to get the parent object.
+    $child_object = $variables['objects'][0];
+    $link = $child_object['link'];
+  }
+  $form = drupal_get_form('search_in_collection', $islandora_object->id, $islandora_object->label);
+  $variables['collection_search'] = drupal_render($form);
+}
+

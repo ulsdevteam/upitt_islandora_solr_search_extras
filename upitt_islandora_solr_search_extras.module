@@ -94,12 +94,17 @@ function upitt_islandora_solr_search_extras_theme() {
       'variables' => array('islandora_object' => NULL),
     ),
     'islandora_basic_collection' => array(
-      'template' => 'theme/islandora-basic-collection ',
+      'template' => 'theme/islandora-basic-collection',
       'file' => 'theme/theme.inc',
       'variables' => array('islandora_object' => NULL),
     ),
     'islandora_objects_grid' => array(
       'template' => 'theme/islandora-objects-grid',
+      'file' => 'theme/theme.inc',
+      'variables' => array('islandora_object' => NULL, 'objects' => NULL),
+    ),
+    'islandora_objects_list' => array(
+      'template' => 'theme/islandora-objects-list',
       'file' => 'theme/theme.inc',
       'variables' => array('islandora_object' => NULL, 'objects' => NULL),
     ),
