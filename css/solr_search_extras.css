@@ -3,20 +3,42 @@
 }
 
 .solr-field-orig {
+  font-size: larger;
+}
+
+.solr-field-parent {
   color: #555;
   font-size: smaller;
 }
 
-.solr-field-parent {
-  color: #000;
+.field-parent-fields {
+  float: left;
+  width: 405px;
+  background-color: #F5F5F5;
+  border-radius: 10px;
+  box-shadow: 0px 0px 1px 1px #ddd;
 }
 
-dt, .solr-fields dd, dl.solr-fields {
-  border-top: none !important;
+.field-parent-fields ul, .field-parent-fields h4 {
+  margin: 0.25em 0 !important;
+  padding: 0 0 0.1em 0.75em !important;  
 }
 
 .solr-page-thumb {
   float: left;
   clear: both;
   border: 1px solid #eee;
+}
+
+.search-result-wrapper {
+  height: 250px;
+  width: 250px;
+  position: relative;
+  float: left;
+  padding: 0;
+  margin-right: 1em;
+}
+
+.islandora-solr-search-result ul {
+  list-style-type: none;
 }

@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- * Islandora solr search primary results template file.
+ * islandora-solr-extras.tpl.php
  *
  * Variables available:
  * - $results: Primary profile results array
@@ -19,36 +19,39 @@
       <!-- Search result -->
       <div class="islandora-solr-search-result clear-block <?php print $row_result % 2 == 0 ? 'odd' : 'even'; ?>">
         <div class="islandora-solr-search-result-inner">
-          <dl class="solr-thumb">
-          <!-- Thumbnail -->
-            <dt>
+          <div class="search-result-wrapper">
+            <div class="search-result-img-wrapper">
+            <!-- Thumbnail -->
               <?php print $result['thumbnail']; ?>
-            </dt>
-            <dd></dd>
-          </dl>
+            </div>
+          </div>
           <!-- Metadata -->
-          <dl class="solr-fields islandora-inline-metadata">
-            <?php foreach($result['solr_doc'] as $key => $value): ?>
-              <dd class="solr-value solr-field-parent <?php print $value['class']; ?>">
-                <?php print $value['value']; ?>
-              </dd>
-            <?php endforeach; ?>
-          </dl>
           <?php if ($result['page_thumbnail']) : ?>
-          <dl class="solr-page-thumb">
-             <dt>
+          <ul class="solr-page-thumb">
+              <li>
                  <?php print $result['page_thumbnail']; ?>
-             </dt>
-            <dd></dd>
-          </dl>
+             </li>
+          </ul>
           <?php endif; ?>
-          <dl class="solr-fields islandora-inline-metadata">
+          <ul class="solr-fields islandora-inline-metadata">
             <?php foreach($result['page_solr_doc'] as $key => $value): ?>
-              <dd class="solr-value solr-field-orig <?php print $value['class']; ?>">
+              <li class="solr-value solr-field-orig <?php print $value['class']; ?>">
                 <?php print $value['value']; ?>
-              </dd>
+              </li>
             <?php endforeach; ?>
-          </dl>
+          </ul>
+          <div class="field-parent-fields">
+            <?php if (isset($result['parent_container_name'])): ?>
+              <h4><?php print $result['parent_container_name']; ?></h4>
+            <?php endif; ?>
+            <ul class="solr-fields islandora-inline-metadata">
+              <?php foreach($result['solr_doc'] as $key => $value): ?>
+                <li class="solr-value solr-field-parent <?php print $value['class']; ?>">
+                  <?php print $value['value']; ?>
+                </li>
+              <?php endforeach; ?>
+            </ul>
+          </div>
         </div>
       </div>
     <?php $row_result++; ?>
