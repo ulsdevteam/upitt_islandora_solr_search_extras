@@ -229,8 +229,11 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
       }
       if (stristr($object_results[$k]['content_models'][0], 'pageCModel') == 'pageCModel') {
         // add a new item that will be rendered as the page number
-        $page_number = str_replace(array('page/', '/mode/1up'), '', $object_results[$k]['object_url_fragment']);
-        $object_results[$k]['solr_doc']['page_number'] = array('value' => 'Page: ' . $page_number, 'label' => 'Page #', 'class' => '' );
+        @list($junk, $keep) = explode("page/", $object_results[$k]['object_url_fragment']);
+        @list($page_number, $junk) = explode("/mode", $keep);
+        if (is_numeric($page_number)) {
+          $object_results[$k]['solr_doc']['page_number'] = array('value' => 'Page: ' . $page_number, 'label' => 'Page #', 'class' => '' );
+        }
       }
     }
     // Return themed search results.
@@ -370,5 +373,4 @@ function _get_solr_search_fields() {
 
   return $fields;
 }
-
 
