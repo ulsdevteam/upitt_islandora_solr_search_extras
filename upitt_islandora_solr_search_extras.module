@@ -93,6 +93,11 @@ function upitt_islandora_solr_search_extras_theme() {
       'file' => 'theme/theme.inc',
       'variables' => array('islandora_object' => NULL),
     ),
+    'islandora_basic_collection_list' => array(
+      'template' => 'theme/islandora-basic-collection-list',
+      'file' => 'theme/theme.inc',
+      'variables' => array('islandora_object' => NULL),
+    ),
     'islandora_basic_collection' => array(
       'template' => 'theme/islandora-basic-collection',
       'file' => 'theme/theme.inc',
@@ -151,7 +156,6 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
     foreach ($object_results as $k=>$solr_result_object) {
       if (isset($object_results[$k]['datastreams'])) {
         $object_results[$k]['page_solr_doc'] = array();
-        $object_results[$k]['parent_container_name'] = '';
         $object_results[$k]['thumbnail'] = $object_results[$k]['page_thumbnail'] = '';
 
         $path = url($object_results[$k]['thumbnail_url'], array('query' => $object_results[$k]['thumbnail_url_params']));
@@ -190,9 +194,8 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
               }
               $page = $object_results[$k];
               $object_results[$k]['solr_doc'] = $solr_doc;
-              error_log(print_r($object_results[$k], true));
               $object_results[$k]['page_solr_doc'] = $page['solr_doc'];
-              $object_results[$k]['parent_container_name'] = 'Values from parent object';
+   // Perhaps the child object thumbnail will be needed to display in the islandora-solr-extras.tpl.php.
    /*
               if (isset($page['datastreams']) && array_search('TN', $page['datastreams'])) {
                 $options = array('html' => TRUE);
@@ -335,7 +338,7 @@ function upitt_islandora_solr_search_extras_permission() {
 }
 
 function _get_solr_search_fields() {
-  $results = db_query("SELECT `solr_field`, `solr_field_settings` FROM islandora_solr_fields WHERE field_type = 'result_fields'");
+  $results = db_query("SELECT `solr_field`, `solr_field_settings` FROM islandora_solr_fields WHERE field_type = 'result_fields' ORDER BY `weight`");
   $fields = array();
   foreach ($results as $row) {
     $settings = unserialize($row->solr_field_settings);

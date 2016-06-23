@@ -40,21 +40,17 @@
               </li>
             <?php endforeach; ?>
           </ul>
-          <div class="field-parent-fields">
-            <?php if (isset($result['parent_container_name'])): ?>
-              <h4><?php print $result['parent_container_name']; ?></h4>
-            <?php endif; ?>
-            <ul class="solr-fields islandora-inline-metadata">
-              <?php foreach($result['solr_doc'] as $key => $value): ?>
-                <li class="solr-value solr-field-parent <?php print $value['class']; ?>">
-                  <?php print $value['value']; ?>
-                </li>
-              <?php endforeach; ?>
-            </ul>
-          </div>
+          <ul class="solr-fields islandora-inline-metadata">
+            <?php foreach($result['solr_doc'] as $key => $value): ?>
+              <li class="solr-value solr-field-parent <?php print $value['class']; ?>">
+                <?php print $value['value']; ?>
+              </li>
+            <?php endforeach; ?>
+          </ul>
         </div>
       </div>
     <?php $row_result++; ?>
     <?php endforeach; ?>
   </div>
 <?php endif; ?>
+

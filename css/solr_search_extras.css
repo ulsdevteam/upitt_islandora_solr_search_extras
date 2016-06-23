@@ -11,19 +11,6 @@
   font-size: smaller;
 }
 
-.field-parent-fields {
-  float: left;
-  width: 405px;
-  background-color: #F5F5F5;
-  border-radius: 10px;
-  box-shadow: 0px 0px 1px 1px #ddd;
-}
-
-.field-parent-fields ul, .field-parent-fields h4 {
-  margin: 0.25em 0 !important;
-  padding: 0 0 0.1em 0.75em !important;  
-}
-
 .solr-page-thumb {
   float: left;
   clear: both;
@@ -42,3 +29,4 @@
 .islandora-solr-search-result ul {
   list-style-type: none;
 }
+

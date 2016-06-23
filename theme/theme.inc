@@ -17,13 +17,20 @@ function upitt_islandora_solr_search_extras_preprocess_islandora_basic_collectio
   $variables['collection_search'] = drupal_render($form);
 }
 
+function upitt_islandora_solr_search_extras_preprocess_islandora_basic_collection_list(&$variables, $hook) {
+  $islandora_object = $variables['islandora_object'];
+  $form = drupal_get_form('search_in_collection', $islandora_object->id, $islandora_object->label);
+  $variables['collection_search'] = drupal_render($form);
+}
+
 function upitt_islandora_solr_search_extras_preprocess_islandora_basic_collection_grid(&$variables, $hook) {
   $islandora_object = $variables['islandora_object'];
   $form = drupal_get_form('search_in_collection', $islandora_object->id, $islandora_object->label);
   $variables['collection_search'] = drupal_render($form);
 }
 
-function upitt_islandora_solr_search_extras_preprocess_islandora_objects_grid(&$variables) {
+function upitt_islandora_solr_search_extras_preprocess_islandora_objects_list(&$variables) {
+error_log('in upitt_islandora_solr_search_extras_preprocess_islandora_objects_list');
   $islandora_object = menu_get_object('islandora_object', 2);
 
   if (!is_object($islandora_object)) {
@@ -35,7 +42,8 @@ function upitt_islandora_solr_search_extras_preprocess_islandora_objects_grid(&$
   $variables['collection_search'] = drupal_render($form);
 }
 
-function upitt_islandora_solr_search_extras_preprocess_islandora_objects_list(&$variables) {
+function upitt_islandora_solr_search_extras_preprocess_islandora_objects_grid(&$variables) {
+error_log('in upitt_islandora_solr_search_extras_preprocess_islandora_objects_grid');
   $islandora_object = menu_get_object('islandora_object', 2);
 
   if (!is_object($islandora_object)) {
