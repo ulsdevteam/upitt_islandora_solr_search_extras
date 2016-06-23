@@ -280,7 +280,7 @@ function _islandora_solr_pid_parent_search($child_object, $solr_fields, $options
         $found = false;
         foreach ($tmp['response']['docs'] as $match_result) {
           if (array_key_exists($key, $match_result)) {
-            $found = $match_result[$key][0];
+            $found = (is_array($match_result[$key])) ? $match_result[$key][0] : $match_result[$key];
           }
         }
         if ($found) {
