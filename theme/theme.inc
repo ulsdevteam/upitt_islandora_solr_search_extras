@@ -30,7 +30,6 @@ function upitt_islandora_solr_search_extras_preprocess_islandora_basic_collectio
 }
 
 function upitt_islandora_solr_search_extras_preprocess_islandora_objects_list(&$variables) {
-error_log('in upitt_islandora_solr_search_extras_preprocess_islandora_objects_list');
   $islandora_object = menu_get_object('islandora_object', 2);
 
   if (!is_object($islandora_object)) {
@@ -43,7 +42,6 @@ error_log('in upitt_islandora_solr_search_extras_preprocess_islandora_objects_li
 }
 
 function upitt_islandora_solr_search_extras_preprocess_islandora_objects_grid(&$variables) {
-error_log('in upitt_islandora_solr_search_extras_preprocess_islandora_objects_grid');
   $islandora_object = menu_get_object('islandora_object', 2);
 
   if (!is_object($islandora_object)) {

@@ -188,7 +188,7 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
               (isset($object_results[$k]['object_url']))) {
             $solr_doc = _islandora_solr_pid_parent_search($object_results[$k], $solr_fields, $options);
             if (is_array($solr_doc)) {
-              // Keep the existing title value
+              // Keep the existing title value for later.
               if (isset($object_results[$k]['dc.title'])) {
                 $tmp_title = $object_results[$k]['dc.title']['value'];
               }
@@ -227,6 +227,11 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
       if (($object_results[$k]['solr_doc']['dc.title']['value']) == '') {
         $object_results[$k]['solr_doc']['dc.title']['value'] = $page['object_label'];
       }
+      if (stristr($object_results[$k]['content_models'][0], 'pageCModel') == 'pageCModel') {
+        // add a new item that will be rendered as the page number
+        $page_number = str_replace(array('page/', '/mode/1up'), '', $object_results[$k]['object_url_fragment']);
+        $object_results[$k]['solr_doc']['page_number'] = array('value' => 'Page: ' . $page_number, 'label' => 'Page #', 'class' => '' );
+      }
     }
     // Return themed search results.
     return theme('islandora_solr_extras', array('results' => $object_results, 'elements' => $elements));
@@ -254,12 +259,12 @@ function _islandora_solr_pid_parent_search($child_object, $solr_fields, $options
     // Build and execute Apache Solr query.
     module_load_include('inc', 'islandora_solr_search', 'includes/utilities');
     $query_processor = new IslandoraSolrQueryProcessor();
-    $query_processor->solrQuery = 'PID:'.$pid; // 'RELS_EXT_hasModel_uri_s:(*' . str_replace(":", "\:", implode("* OR *", $models)) . '*)';
+    $query_processor->solrQuery = 'PID:'.$pid;
     $query_processor->solrStart = 0;
     $query_processor->solrLimit = 1;
     $query_processor->solrParams = array(
       'fl' => $solr_fields_csv,
-      'fq' => variable_get('islandora_solr_base_filter', ''), // RELS_EXT_isPageOf_uri_s:",
+      'fq' => variable_get('islandora_solr_base_filter', ''),
     );
     $url = parse_url(variable_get('islandora_solr_url', 'localhost:8080/solr'));
     $solr = new Apache_Solr_Service($url['host'], $url['port'], $url['path'] . '/');
