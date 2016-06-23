@@ -186,7 +186,7 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
                (!(isset($object_results[$k]['solr_doc']['RELS_EXT_isPageOf_uri_ms']))) ||
                (!(isset($object_results[$k]['solr_doc']['RELS_EXT_isMemberOf_uri_ms'])))) &&
               (isset($object_results[$k]['object_url']))) {
-            $solr_doc = _islandora_solr_pid_parent_search($object_results[$k]['PID'], $solr_fields);
+            $solr_doc = _islandora_solr_pid_parent_search($object_results[$k], $solr_fields, $options);
             if (is_array($solr_doc)) {
               // Keep the existing title value
               if (isset($object_results[$k]['dc.title'])) {
@@ -236,10 +236,10 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
 /**
  * Helper function to lookup the parent object based on a PID value.
  */
-function _islandora_solr_pid_parent_search($child_pid, $solr_fields) {
+function _islandora_solr_pid_parent_search($child_object, $solr_fields, $options) {
+  $child_pid = $child_object['PID'];
   $solr_fields_csv = implode(",", array_keys($solr_fields));
   $_islandora_solr_queryclass = new IslandoraSolrQueryProcessor();
-
   $islandora_object = islandora_object_load($child_pid);
   $parent = $islandora_object->getParents();
   $page_parents = $islandora_object->relationships->get(NULL, 'isPageOf');
@@ -258,7 +258,7 @@ function _islandora_solr_pid_parent_search($child_pid, $solr_fields) {
     $query_processor->solrStart = 0;
     $query_processor->solrLimit = 1;
     $query_processor->solrParams = array(
-      'fl' => "PID," . $solr_fields_csv,
+      'fl' => $solr_fields_csv,
       'fq' => variable_get('islandora_solr_base_filter', ''), // RELS_EXT_isPageOf_uri_s:",
     );
     $url = parse_url(variable_get('islandora_solr_url', 'localhost:8080/solr'));
@@ -267,16 +267,33 @@ function _islandora_solr_pid_parent_search($child_pid, $solr_fields) {
     try {
       $results = $solr->search($query_processor->solrQuery, $query_processor->solrStart, $query_processor->solrLimit, $query_processor->solrParams, 'GET');
       $tmp = json_decode($results->getRawResponse(), TRUE);
-      $results = array();
+      $added_fields = $results = array();
+      foreach ($solr_fields as $key => $solr_field) {
+        $found = false;
+        foreach ($tmp['response']['docs'] as $match_result) {
+          if (array_key_exists($key, $match_result)) {
+            $found = $match_result[$key][0];
+          }
+        }
+        if ($found) {
+          $added_fields[] = $key;
+          $results[$key] = array('label' => $solr_fields[$key]['label'],
+                                 'class' => $solr_fields[$key]['class'],
+                                 'value' => $found);
+        }
+      }
       foreach ($tmp['response']['docs'] as $trip) {
         $keys = array_keys($trip);
         foreach ($keys as $key) {
-          if ($key <> 'PID') {
+          if (!array_search($key, $added_fields)) {
             $results[$key] = array('label' => $solr_fields[$key]['label'],
                                    'class' => $solr_fields[$key]['class'],
                                    'value' => @$trip[$key][0]);
           }
         }
+      }
+      if (isset($results['dc.title']['value'])) {
+        $results['dc.title']['value'] = l($results['dc.title']['value'], $child_object['object_url'], $options);
       }
       return $results;
     }
@@ -348,4 +365,5 @@ function _get_solr_search_fields() {
 
   return $fields;
 }
+
 
