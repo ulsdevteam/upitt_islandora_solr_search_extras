@@ -2,15 +2,6 @@
   margin-left: 0 !important;
 }
 
-.solr-field-orig {
-  font-size: larger;
-}
-
-.solr-field-parent {
-  color: #555;
-  font-size: smaller;
-}
-
 .solr-page-thumb {
   float: left;
   clear: both;
