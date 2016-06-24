@@ -227,10 +227,12 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
       if (($object_results[$k]['solr_doc']['dc.title']['value']) == '') {
         $object_results[$k]['solr_doc']['dc.title']['value'] = $page['object_label'];
       }
-      if (stristr($object_results[$k]['content_models'][0], 'pageCModel') == 'pageCModel') {
-        // add a new item that will be rendered as the page number
-        @list($junk, $keep) = explode("page/", $object_results[$k]['object_url_fragment']);
-        @list($page_number, $junk) = explode("/mode", $keep);
+      if ((stristr($object_results[$k]['content_models'][0], 'pageCModel') == 'pageCModel') &&
+        (substr($object_results[$k]['object_label'], 0, 5) == 'Page ')) {
+        // Get the page # value from the object_label - and create a new item that will be
+        // rendered as the page number.
+        @list($keep, $junk) = explode(", ", $object_results[$k]['object_label']);
+        $page_number = str_replace("Page ", "", $keep);
         if (is_numeric($page_number)) {
           $object_results[$k]['solr_doc']['page_number'] = array('value' => 'Page: ' . $page_number, 'label' => 'Page #', 'class' => '' );
         }
@@ -373,4 +375,5 @@ function _get_solr_search_fields() {
 
   return $fields;
 }
+
 
