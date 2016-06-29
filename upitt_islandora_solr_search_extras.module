@@ -83,11 +83,6 @@ function upitt_islandora_solr_search_extras_theme() {
       'file' => 'theme/theme.inc',
       'variables' => array('islandora_object' => NULL),
     ),
-    'islandora_basic_collection_wrapper' => array(
-      'template' => 'theme/islandora-basic-collection-wrapper',
-      'file' => 'theme/theme.inc',
-      'variables' => array('islandora_object' => NULL),
-    ),
     'islandora_basic_collection_grid' => array(
       'template' => 'theme/islandora-basic-collection-grid',
       'file' => 'theme/theme.inc',
