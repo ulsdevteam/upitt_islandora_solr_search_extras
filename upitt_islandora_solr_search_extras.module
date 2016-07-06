@@ -23,8 +23,8 @@ function upitt_islandora_solr_search_extras_menu() {
       'access arguments' => array(ISLANDORA_VIEW_OBJECTS, 2),
     ),
     'admin/islandora/tools/upitt_islandora_solr_search_extras' => array(
-      'title' => 'University of Pittsburgh IsMemberOfSite Settings',
-      'description' => 'Change the available Sites for adding IsMemberOfSite tags to object models.',
+      'title' => 'SOLR Search Extras Settings',
+      'description' => 'Configure the various SOLR Search Extras options.',
       'page callback' => 'drupal_get_form',
       'page arguments' => array('upitt_islandora_solr_search_extras_admin_settings'),
       'access arguments' => array(UPITT_ISLANDORA_SOLR_SEARCH_EXTRAS_MANAGE),
