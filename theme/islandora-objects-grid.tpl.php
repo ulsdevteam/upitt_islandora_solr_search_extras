@@ -7,9 +7,6 @@
  * Render a bunch of objects in a list or grid view.
  */
 ?>
-<?php if (isset($collection_search)) {
-  print render($collection_search);
-} ?>    
 <div class="islandora-objects-grid clearfix">
  <?php foreach($objects as $object): ?>
    <div class="islandora-objects-grid-item">

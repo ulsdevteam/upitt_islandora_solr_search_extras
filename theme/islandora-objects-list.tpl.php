@@ -7,9 +7,6 @@
  * Render a bunch of objects in a list or grid view.
  */
 ?>
-<?php if (isset($collection_search)) {
-  print render($collection_search);
-} ?>    
 <div class="islandora-objects-list">
   <?php $row_field = 0; ?>
   <?php foreach($objects as $object): ?>
@@ -32,3 +29,7 @@
     <?php $row_field++; ?>
   <?php endforeach; ?>
 </div>
+<?php if ($solr_search) : ?>
+  <div><?php print $solr_search; ?></div>
+<?php endif; ?>
+

@@ -7,9 +7,6 @@
  * @TODO: needs documentation about file and variables
  */
 ?>
-<?php if (isset($collection_search)) {
-  print render($collection_search);
-} ?>    
 <div class="islandora islandora-basic-collection">
     <?php $row_field = 0; ?>
     <?php foreach($associated_objects_array as $associated_object): ?>
