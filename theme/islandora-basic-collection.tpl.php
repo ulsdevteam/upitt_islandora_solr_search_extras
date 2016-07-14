@@ -1,4 +1,4 @@
-<?php
+hello world!?<?php
 
 /**
  * @file

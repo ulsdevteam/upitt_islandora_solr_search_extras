@@ -5,32 +5,44 @@
  * Theme hooks.
  */
 
-function upitt_islandora_solr_search_extras_preprocess_islandora_basic_collection_wrapper(&$variables, $hook) {
+function upitt_islandora_solr_search_extras_preprocess_islandora_basic_collection_wrapper(&$variables) {
+  dpm('collection wrapper');
   $variables['view_links'] = array();
 }
 
-function upitt_islandora_solr_search_extras_preprocess_islandora_basic_collection(&$variables, $hook) {
+function upitt_islandora_solr_search_extras_preprocess_islandora_basic_collection(&$variables) {
+dpm('basic collection');
   $islandora_object = $variables['islandora_object'];
+  $variables['view_links'] = array();
   _get_solr_results($islandora_object, $variables);
 }
 
-function upitt_islandora_solr_search_extras_preprocess_islandora_basic_collection_list(&$variables, $hook) {
+function upitt_islandora_solr_search_extras_preprocess_islandora_basic_collection_list(&$variables) {
+dpm('basic collection list');
   $islandora_object = $variables['islandora_object'];
+  $variables['view_links'] = array();
   _get_solr_results($islandora_object, $variables);
 }
 
-function upitt_islandora_solr_search_extras_preprocess_islandora_basic_collection_grid(&$variables, $hook) {
+function upitt_islandora_solr_search_extras_preprocess_islandora_basic_collection_grid(&$variables) {
+dpm('basic collection grid');
+dpm($variables);
   $islandora_object = $variables['islandora_object'];
+  $variables['view_links'] = array();
   _get_solr_results($islandora_object, $variables);
 }
 
 function upitt_islandora_solr_search_extras_preprocess_islandora_objects_list(&$variables) {
+dpm('objects list');
   $islandora_object = menu_get_object('islandora_object', 2);
   _get_solr_results($islandora_object, $variables);
 }
 
 function upitt_islandora_solr_search_extras_preprocess_islandora_objects_grid(&$variables) {
+dpm('objects grid');
+dpm($variables);
   $islandora_object = menu_get_object('islandora_object', 2);
+  $variables['view_links'] = array();
   _get_solr_results($islandora_object, $variables);
 }
 

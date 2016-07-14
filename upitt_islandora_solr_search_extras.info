@@ -1,7 +1,7 @@
 name = University of Pittsburgh SOLR Search Extras
 description = To provide additional features upon the Islandora Solr Search module
 package = Islandora Tools
-version = 7.x-1.6
+version = 7.x-1.6bg
 core = 7.x
 dependencies[] = islandora
 dependencies[] = islandora_solr

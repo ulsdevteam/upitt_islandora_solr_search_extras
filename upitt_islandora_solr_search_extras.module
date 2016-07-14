@@ -70,13 +70,13 @@ function upitt_islandora_solr_search_extras_theme() {
       'file' => 'theme/theme.inc',
       'variables' => array('islandora_object' => NULL),
     ),
-    'islandora_objects_grid' => array(
-      'template' => 'theme/islandora-objects-grid',
+    'islandora_objects_list' => array(
+      'template' => 'theme/islandora-objects-search-results',
       'file' => 'theme/theme.inc',
       'variables' => array('islandora_object' => NULL, 'objects' => NULL),
     ),
-    'islandora_objects_list' => array(
-      'template' => 'theme/islandora-objects-list',
+    'islandora_objects_grid' => array(
+      'template' => 'theme/islandora-objects-search-results',
       'file' => 'theme/theme.inc',
       'variables' => array('islandora_object' => NULL, 'objects' => NULL),
     ),
@@ -323,8 +323,6 @@ function upitt_islandora_solr_search_extras_block_view_alter(&$data, $block) {
  */
 function _replace_links($islandora_object, &$markup) {
   $pattern = '/(<a.*?href=[\'"])([^\'"]*?)\?([^\'"]*?islandora_solr_search_navigation=.*?)([\'"].*?>)/';
-
-  dpm($markup);
   $markup = preg_replace_callback($pattern,
     function($m){
       return $m[1] . $m[2] . sprintf('/search/%s', base64_encode($m[3])) . $m[4];
