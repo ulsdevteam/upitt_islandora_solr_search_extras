@@ -310,7 +310,11 @@ function _get_solr_search_fields() {
 function upitt_islandora_solr_search_extras_block_view_alter(&$data, $block) {
   if ($block->module == 'islandora_solr' && ($block->delta == 'basic_facets' || $block->delta == 'sort')) {
     $islandora_object = menu_get_object('islandora_object', 2);
-    $data['content'] = _replace_links($islandora_object, $data['content']);
+    $content_models = $islandora_object->relationships->get(FEDORA_MODEL_URI, 'hasModel');
+    $is_collection = (isset($content_models[0]['object']['value'])) ? ($content_models[0]['object']['value'] == 'islandora:collectionCModel') : FALSE;
+    if ($is_collection) {
+      $data['content'] = _replace_links($islandora_object, $data['content']);
+    }
   }
 }
 
