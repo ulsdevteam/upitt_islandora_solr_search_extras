@@ -21,23 +21,8 @@ function upitt_islandora_solr_search_extras_menu() {
       'access arguments' => array(UPITT_ISLANDORA_SOLR_SEARCH_EXTRAS_MANAGE),
       'file' => 'includes/admin.form.inc',
     ),
-    'islandora/object/%islandora_object/search/%' => array(
-      'title' => 'Searching within Collection',
-      'description' => 'Search the models within this Collection.',
-      'page callback' => 'drupal_get_form',
-      'page arguments' => array('upitt_islandora_solr_search_extras_search', 2, 4),
-      'type' => MENU_CALLBACK,
-      'access callback' => 'islandora_object_access_callback',
-      'access arguments' => array(ISLANDORA_VIEW_OBJECTS, 2),
-    ),
   );
   return $items;
-}
-
-function upitt_islandora_solr_search_extras_search($form, &$form_state, AbstractObject $object, $base64_query_string) {
-  $query_string = base64_decode($base64_query_string);
-
-  die($query_string);
 }
 
 /**
@@ -45,6 +30,23 @@ function upitt_islandora_solr_search_extras_search($form, &$form_state, Abstract
  */
 function upitt_islandora_solr_search_extras_theme() {
   return array(
+    'block_wrapper' => array(
+      'variables' => array(
+        'block' => NULL,
+      ),
+      'template' => 'theme/block',
+      'file' => 'theme/theme.inc',
+    ),
+    'islandora_objects_extras' => array(
+      'file' => 'theme/theme.inc',
+      'template' => 'theme/islandora-objects-extras',
+      'variables' => array(
+        'objects' => NULL,
+        'display' => NULL,
+        'page_size' => 20,
+        'limit' => 12,
+      ),
+    ),
     'islandora_basic_collection_wrapper' => array(
       'template' => 'theme/islandora-basic-collection-wrapper',
       'file' => 'theme/theme.inc',
@@ -55,28 +57,24 @@ function upitt_islandora_solr_search_extras_theme() {
       'file' => 'theme/theme.inc',
       'variables' => array('islandora_object' => NULL),
     ),
-    'islandora_basic_collection_grid' => array(
-      'template' => 'theme/islandora-basic-collection-grid',
+    'islandora_objects_subset' => array(
       'file' => 'theme/theme.inc',
-      'variables' => array('islandora_object' => NULL),
-    ),
-    'islandora_basic_collection_list' => array(
-      'template' => 'theme/islandora-basic-collection-list',
-      'file' => 'theme/theme.inc',
-      'variables' => array('islandora_object' => NULL),
-    ),
-    'islandora_basic_collection' => array(
-      'template' => 'theme/islandora-basic-collection',
-      'file' => 'theme/theme.inc',
-      'variables' => array('islandora_object' => NULL),
+      'template' => 'theme/islandora-objects-subset',
+      'variables' => array(
+        'objects' => NULL,
+        'display' => 'grid',
+        'limit' => 10,
+        'total' => NULL,
+        'pager_element' => 0,
+      ),
     ),
     'islandora_objects_list' => array(
-      'template' => 'theme/islandora-objects-search-results',
+      'template' => 'theme/islandora-objects-list',
       'file' => 'theme/theme.inc',
       'variables' => array('islandora_object' => NULL, 'objects' => NULL),
     ),
     'islandora_objects_grid' => array(
-      'template' => 'theme/islandora-objects-search-results',
+      'template' => 'theme/islandora-objects-grid',
       'file' => 'theme/theme.inc',
       'variables' => array('islandora_object' => NULL, 'objects' => NULL),
     ),
@@ -108,6 +106,7 @@ function upitt_islandora_solr_search_extras_theme() {
  *   Returns the themed solr search results.
  */
 function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_results) {
+  error_log('in upitt_islandora_solr_search_extras_islandora_solr_printResults');
   $solr_fields = _get_solr_search_fields();
   $path = drupal_get_path('module', 'upitt_islandora_solr_search_extras');
   drupal_add_css("$path/css/solr_search_extras.css");
@@ -119,6 +118,7 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
 
     $elements = array();
     $elements['solr_total'] = $solr_results['response']['numFound'];
+error_log($elements['solr_total']);
     $elements['solr_start'] = $solr_results['response']['start'];
     foreach ($object_results as $k=>$solr_result_object) {
       if (isset($object_results[$k]['datastreams'])) {
@@ -302,35 +302,4 @@ function _get_solr_search_fields() {
   }
 
   return $fields;
-}
-
-/**
- * Implements hook_block_view_alter().
- */
-function upitt_islandora_solr_search_extras_block_view_alter(&$data, $block) {
-  if ($block->module == 'islandora_solr' && ($block->delta == 'basic_facets' || $block->delta == 'sort')) {
-    $islandora_object = menu_get_object('islandora_object', 2);
-    $content_models = $islandora_object->relationships->get(FEDORA_MODEL_URI, 'hasModel');
-    $is_collection = (isset($content_models[0]['object']['value'])) ? ($content_models[0]['object']['value'] == 'islandora:collectionCModel') : FALSE;
-    if ($is_collection) {
-      $data['content'] = _replace_links($islandora_object, $data['content']);
-    }
-  }
-}
-
-/**
- * Helper function to rewrite the links that lead to SOLR search pages --- so
- * that they are handled by this controller.
- *
- * @param type $islandora_object
- * @param string $markup
- */
-function _replace_links($islandora_object, &$markup) {
-  $pattern = '/(<a.*?href=[\'"])([^\'"]*?)\?([^\'"]*?islandora_solr_search_navigation=.*?)([\'"].*?>)/';
-  $markup = preg_replace_callback($pattern,
-    function($m){
-      return $m[1] . $m[2] . sprintf('/search/%s', base64_encode($m[3])) . $m[4];
-    },
-    $markup);
-  return $markup;
 }
