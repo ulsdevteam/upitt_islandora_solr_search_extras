@@ -43,7 +43,10 @@
     ?>
   </span>
     <?php print $pager; ?>
+    <?php if ($total_count) : ?>
     <div>Total objects: <?php print $total_count; ?></div>
+    <?php endif; ?>
+
     <?php print $content; ?>
     <?php print $pager; ?>
   </div><!-- /end islandora-basic-collection-metadata-desc -->

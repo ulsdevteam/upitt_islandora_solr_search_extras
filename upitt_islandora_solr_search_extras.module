@@ -52,6 +52,12 @@ function upitt_islandora_solr_search_extras_theme() {
       'file' => 'theme/theme.inc',
       'variables' => array('islandora_object' => NULL),
     ),
+    'islandora_basic_collection' => array(
+      'template' => 'theme/islandora-basic-collection',
+      'file' => 'theme/theme.inc',
+      'pattern' => 'islandora_basic_collection__',
+      'variables' => array('islandora_object' => NULL),
+    ),
     'islandora_solr_wrapper_extras' => array(
       'template' => 'theme/islandora-solr-wrapper-extras',
       'file' => 'theme/theme.inc',
@@ -106,7 +112,6 @@ function upitt_islandora_solr_search_extras_theme() {
  *   Returns the themed solr search results.
  */
 function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_results) {
-  error_log('in upitt_islandora_solr_search_extras_islandora_solr_printResults');
   $solr_fields = _get_solr_search_fields();
   $path = drupal_get_path('module', 'upitt_islandora_solr_search_extras');
   drupal_add_css("$path/css/solr_search_extras.css");
@@ -118,7 +123,6 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
 
     $elements = array();
     $elements['solr_total'] = $solr_results['response']['numFound'];
-error_log($elements['solr_total']);
     $elements['solr_start'] = $solr_results['response']['start'];
     foreach ($object_results as $k=>$solr_result_object) {
       if (isset($object_results[$k]['datastreams'])) {
@@ -303,3 +307,4 @@ function _get_solr_search_fields() {
 
   return $fields;
 }
+
