@@ -10,6 +10,7 @@
 /* <div class="islandora-basic-collection-wrapper">
 */
 ?>
+  <?php print $whamjack_sidebar; ?>
   <?php if (!$display_metadata && !empty($dc_array['dc:description']['value'])): ?>
     <p><?php print nl2br($dc_array['dc:description']['value']); ?></p>
     <hr />

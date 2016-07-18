@@ -24,7 +24,7 @@ function upitt_islandora_solr_search_extras_preprocess_islandora_objects_subset(
     }
     $variables['collection_metadata'] = islandora_retrieve_metadata_markup($islandora_object);
   }
-
+  $variables['whamjack_sidebar'] = _get_solr_sidebar_blocks()."<hr><p>a quick brown fox jumped over the lazy dog</p>";
   $variables['display_links'] = array();
   $variables['pager'] = '';
 }
@@ -71,7 +71,9 @@ function upitt_islandora_solr_search_extras_preprocess_islandora_objects_list(&$
 
 function upitt_islandora_solr_search_extras_preprocess_islandora_objects_grid(&$variables) {
   error_log('in upitt_islandora_solr_search_extras_preprocess_islandora_objects_grid');
-  $variables['page']['sidebar'] = _get_solr_sidebar_blocks();
+  $variables['whamjack_sidebar'] = ''; 
+//  $variables['whamjack_sidebar'] = _get_solr_sidebar_blocks();
+
   $islandora_object = menu_get_object('islandora_object', 2);
   $variables['view_links'] = array();
   _get_solr_results($islandora_object, $variables);
@@ -96,23 +98,23 @@ function _get_solr_sidebar_blocks() {
   error_log('in _get_solr_sidebar_blocks');
   $sort_block = module_invoke('islandora_solr', 'block_view', 'sort');
   $facets_block = module_invoke('islandora_solr', 'block_view', 'basic_facets');
-  return '      <div id="two-col-right-main">
-          <div class="tabs"></div>
-              <div class="region region-sidebar">' .
+  return '
+        <div class="region region-sidebar">' .
 _my_theme_solr_block($sort_block, 'upitt_islandora_solr_search_extras', 'sort') .
     _my_theme_solr_block($facets_block, 'upitt_islandora_solr_search_extras', 'basic_facets') . '
-              </div>
-          </div>
-      </div>';
+        </div>
+';
 }
 
 function _my_theme_solr_block($block, $block_module, $block_delta) {
-  return '<div id="' . drupal_html_id('block-' . $block_module . '-' . $block_delta) . '" class="block-wrapper">
+  return '
+<div id="' . drupal_html_id('block-islandora-solr-' . $block_delta) . '" class="block-wrapper">
 ' . (isset($block['subject']) ? '
   <h2>' . $block['subject'] . '</h2>' : '') .
 '  <div class="content">
     ' . $block['content'] .
 '  </div>
-</div> ';
+</div> 
+';
 }
 

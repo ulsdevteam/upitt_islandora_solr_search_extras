@@ -10,6 +10,8 @@
   </ul>
   <?php endif; ?>
 
+<?php print '[' . $whamjack_sidebar . ']'; ?>
+
   <div id="main-content">
     <div id="sidebar">
   <?php if ($collection_metadata): ?>
@@ -17,11 +19,6 @@
     <!--<p>using the islandora metadata framework</p>-->
     <?php print $collection_metadata; ?> </div>
   <?php endif; ?>
-		<?php if ($page['sidebar']): ?>
-    <div class="widget"> <?php print render($page['sidebar']); ?> </div>
-    <!-- /end widget -->
-    <?php endif; ?>
-  </div><!-- /end sidebar -->
   
 	<?php print render($title_prefix); ?>
 	<?php if ($collection_img): ?>
