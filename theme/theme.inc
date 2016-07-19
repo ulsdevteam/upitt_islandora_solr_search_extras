@@ -26,43 +26,7 @@ function upitt_islandora_solr_search_extras_preprocess_islandora_objects_subset(
   $variables['pager'] = '';
 }
 
-function upitt_islandora_solr_search_extras_preprocess_islandora_objects_extras(&$variables) {
-  $variables['theme_hook_suggestions'][] = 'islandora_objects_extras';
-  $variables['display_links'] = array();
-  $variables['view_links'] = array();
-}
-
-function upitt_islandora_solr_search_extras_preprocess_islandora_basic_collection_wrapper(&$variables) {
-  $islandora_object = $variables['islandora_object'];
-  $variables['view_links'] = array();
-}
-
-function upitt_islandora_solr_search_extras_preprocess_islandora_basic_collection(&$variables) {
-  $islandora_object = $variables['islandora_object'];
-  $variables['view_links'] = array();
-  _get_solr_results($islandora_object, $variables);
-}
-
-function upitt_islandora_solr_search_extras_preprocess_islandora_basic_collection_list(&$variables) {
-  $islandora_object = $variables['islandora_object'];
-  $variables['view_links'] = array();
-  _get_solr_results($islandora_object, $variables);
-}
-
-function upitt_islandora_solr_search_extras_preprocess_islandora_basic_collection_grid(&$variables) {
-  $islandora_object = $variables['islandora_object'];
-  $variables['view_links'] = array();
-  _get_solr_results($islandora_object, $variables);
-}
-
-function upitt_islandora_solr_search_extras_preprocess_islandora_objects_list(&$variables) {
-  $islandora_object = menu_get_object('islandora_object', 2);
-  _get_solr_results($islandora_object, $variables);
-}
-
 function upitt_islandora_solr_search_extras_preprocess_islandora_objects_grid(&$variables) {
-  $variables['whamjack_sidebar'] = _get_solr_sidebar_blocks();
-
   $islandora_object = menu_get_object('islandora_object', 2);
   $variables['view_links'] = array();
   _get_solr_results($islandora_object, $variables);

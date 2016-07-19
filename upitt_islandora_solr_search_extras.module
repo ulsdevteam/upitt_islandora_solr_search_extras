@@ -30,32 +30,7 @@ function upitt_islandora_solr_search_extras_menu() {
  */
 function upitt_islandora_solr_search_extras_theme() {
   return array(
-    'islandora_objects_extras' => array(
-      'file' => 'theme/theme.inc',
-      'template' => 'theme/islandora-objects-extras',
-      'variables' => array(
-        'objects' => NULL,
-        'display' => NULL,
-        'page_size' => 20,
-        'limit' => 12,
-      ),
-    ),
-    'islandora_basic_collection_wrapper' => array(
-      'template' => 'theme/islandora-basic-collection-wrapper',
-      'file' => 'theme/theme.inc',
-      'variables' => array('islandora_object' => NULL),
-    ),
-    'islandora_basic_collection' => array(
-      'template' => 'theme/islandora-basic-collection',
-      'file' => 'theme/theme.inc',
-      'pattern' => 'islandora_basic_collection__',
-      'variables' => array('islandora_object' => NULL),
-    ),
-    'islandora_solr_wrapper_extras' => array(
-      'template' => 'theme/islandora-solr-wrapper-extras',
-      'file' => 'theme/theme.inc',
-      'variables' => array('islandora_object' => NULL),
-    ),
+    // to remove duplicate pager and display_links
     'islandora_objects_subset' => array(
       'file' => 'theme/theme.inc',
       'template' => 'theme/islandora-objects-subset',
@@ -66,17 +41,14 @@ function upitt_islandora_solr_search_extras_theme() {
         'total' => NULL,
         'pager_element' => 0,
       ),
-    ),
-    'islandora_objects_list' => array(
-      'template' => 'theme/islandora-objects-list',
-      'file' => 'theme/theme.inc',
-      'variables' => array('islandora_object' => NULL, 'objects' => NULL),
-    ),
+    ), 
+    // to replace output of grid with solr_search
     'islandora_objects_grid' => array(
       'template' => 'theme/islandora-objects-grid',
       'file' => 'theme/theme.inc',
       'variables' => array('islandora_object' => NULL, 'objects' => NULL),
     ),
+    // to display the solr search results for islandora/search and collection/[fedora-label]
     'islandora_solr_extras' => array(
       'template' => 'theme/islandora-solr-extras',
       'variables' => array(

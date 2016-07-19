@@ -1,6 +1,5 @@
 <?php print $messages; ?>
 
-
   <?php if ($tabs): ?>
   <div class="tabs"><?php print render($tabs); ?></div>
   <?php endif; ?>
@@ -9,8 +8,6 @@
     <?php print render($action_links); ?>
   </ul>
   <?php endif; ?>
-
-<?php print '[' . $whamjack_sidebar . ']'; ?>
 
   <div id="main-content">
     <div id="sidebar">
@@ -40,7 +37,6 @@
     ?>
   </span>
     <?php print $pager; ?>
-
     <?php print $content; ?>
     <?php print $pager; ?>
   </div><!-- /end islandora-basic-collection-metadata-desc -->
