@@ -25,4 +25,15 @@
   margin-top: 0 !important;
 }
 
+.islandora-solr-search-result {
+  width: 828px;
+}
+
+#block-islandora-solr-basic-facets, #block-islandora-solr-sort {
+  width: 88% !important;
+}
+
+.islandora-solr-content {
+  width: 100% !important;
+}
 

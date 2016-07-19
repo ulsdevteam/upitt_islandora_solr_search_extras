@@ -30,13 +30,6 @@ function upitt_islandora_solr_search_extras_menu() {
  */
 function upitt_islandora_solr_search_extras_theme() {
   return array(
-    'block_wrapper' => array(
-      'variables' => array(
-        'block' => NULL,
-      ),
-      'template' => 'theme/block',
-      'file' => 'theme/theme.inc',
-    ),
     'islandora_objects_extras' => array(
       'file' => 'theme/theme.inc',
       'template' => 'theme/islandora-objects-extras',
