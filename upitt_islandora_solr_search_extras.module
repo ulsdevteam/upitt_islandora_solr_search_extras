@@ -48,6 +48,12 @@ function upitt_islandora_solr_search_extras_theme() {
       'file' => 'theme/theme.inc',
       'variables' => array('islandora_object' => NULL, 'objects' => NULL),
     ),
+    // to replace output of grid with solr_search.  send list to same template
+    'islandora_objects_list' => array(
+      'template' => 'theme/islandora-objects-grid',
+      'file' => 'theme/theme.inc',
+      'variables' => array('islandora_object' => NULL, 'objects' => NULL),
+    ),
     // to display the solr search results for islandora/search and collection/[fedora-label]
     'islandora_solr_extras' => array(
       'template' => 'theme/islandora-solr-extras',
