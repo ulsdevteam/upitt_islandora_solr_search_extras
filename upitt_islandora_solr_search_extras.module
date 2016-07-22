@@ -13,6 +13,15 @@ define('UPITT_ISLANDORA_SOLR_SEARCH_EXTRAS_MANAGE', 'manage upitt solr search');
  */
 function upitt_islandora_solr_search_extras_menu() {
   $items = array(
+    'islandora/object/%islandora_object/searching_collection' => array(
+      'title' => 'Search within Collection',
+      'description' => 'Search the models within this Collection.',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('upitt_islandora_solr_search_extras_search_specific', 2),
+      'type' => MENU_CALLBACK,
+      'access callback' => 'islandora_object_access_callback',
+      'access arguments' => array(ISLANDORA_VIEW_OBJECTS, 2),
+    ),
     'admin/islandora/tools/upitt_islandora_solr_search_extras' => array(
       'title' => 'SOLR Search Extras Settings',
       'description' => 'Configure the various SOLR Search Extras options.',
@@ -41,18 +50,28 @@ function upitt_islandora_solr_search_extras_theme() {
         'total' => NULL,
         'pager_element' => 0,
       ),
-    ), 
+    ),
     // to replace output of grid with solr_search
     'islandora_objects_grid' => array(
       'template' => 'theme/islandora-objects-grid',
       'file' => 'theme/theme.inc',
       'variables' => array('islandora_object' => NULL, 'objects' => NULL),
     ),
-    // to replace output of grid with solr_search.  send list to same template
+    // to replace output with solr_search
     'islandora_objects_list' => array(
-      'template' => 'theme/islandora-objects-grid',
+      'template' => 'theme/islandora-objects-list',
       'file' => 'theme/theme.inc',
       'variables' => array('islandora_object' => NULL, 'objects' => NULL),
+    ),
+    'islandora_objects' => array(
+      'file' => 'theme/theme.inc',
+      'template' => 'theme/islandora-objects',
+      'variables' => array(
+        'objects' => NULL,
+        'display' => NULL,
+        'page_size' => 20,
+        'limit' => 12,
+      ),
     ),
     // to display the solr search results for islandora/search and collection/[fedora-label]
     'islandora_solr_extras' => array(
@@ -64,6 +83,45 @@ function upitt_islandora_solr_search_extras_theme() {
       ),
     ),
   );
+}
+
+function upitt_islandora_solr_search_extras_search_specific($form, &$form_state, AbstractObject $object) {
+  // The searchterms is a POST value
+  $search_term = isset($_POST['searchterm']) ? $_POST['searchterm'] : '';
+  $search_field = isset($_POST['field']) ? $_POST['field'] : '';
+  if ($search_term) {
+    if ($search_field) {
+      $solr_query = format_string('(!field:!value OR !field2:!value OR !field3:!value) AND (!search_field:*!search_term*)',
+        array('!field' => 'RELS_EXT_isMemberOfCollection_uri_ms',
+              '!field2' => 'RELS_EXT_isPageOf_uri_ms',
+              '!field3' => 'RELS_EXT_isMemberOf_uri_ms',
+              '!value' => Apache_Solr_Service::escape('info:fedora/' . $object),
+              '!search_field' => $search_field,
+              '!search_term' => $search_term
+          )
+        );
+    }
+    else {
+      // need to get the solr system's setting for this!
+      $solr_query = format_string('(!field:!value OR !field2:!value OR !field3:!value) AND (catch_all_fields_mt:*!search_term* OR dc.title:*!search_term* OR dc.subject:*!search_term* OR mods_abstract_mt:*!search_term* OR mods_originInfo_dateOther_ms:*!search_term*)',
+        array('!field' => 'RELS_EXT_isMemberOfCollection_uri_ms',
+              '!field2' => 'RELS_EXT_isPageOf_uri_ms',
+              '!field3' => 'RELS_EXT_isMemberOf_uri_ms',
+              '!value' => Apache_Solr_Service::escape('info:fedora/' . $object),
+              '!search_term' => $search_term
+          )
+        );
+    }
+  }
+  else {
+    $solr_query = format_string('!field:*!value*', array(
+                '!field' => 'RELS_EXT_isMemberOfCollection_uri_ms',
+                '!value' => Apache_Solr_Service::escape('info:fedora/' . $object),
+        ));
+  }
+  $options = array('query' => array('type' => 'dismax',
+      'f' => array($solr_query)));
+  drupal_goto('islandora/search', $options);
 }
 
 /**
@@ -277,5 +335,44 @@ function _get_solr_search_fields() {
   }
 
   return $fields;
+}
+
+function upitt_islandora_solr_search_extras_form_alter(&$form, $form_state, $form_id) {
+  if($form_id == 'search_in_collection' && isset($form['islandora_object_id']) && $form['islandora_object_id']['#value'] <> '') {
+    $form['#action'] = '/islandora/object/' . $form['islandora_object_id']['#value'] . '/searching_collection' ;
+  }
+}
+
+function search_in_collection(array $form, array &$form_state, $id, $objLabel) {
+  $path = drupal_get_path('module', 'upitt_islandora_solr_search_extras');
+  drupal_add_css("$path/css/solr_search_extras.css");
+  $form = array(
+    'options' => array(
+      '#type' => 'fieldset',
+      '#title' => t('Search within "' . $objLabel . '"'),
+      '#attributes' => array('class' => array('container-inline')),
+      'searchterm' => array(
+        '#type' => 'textfield',
+        '#value' => '',
+        '#defaultvalue' => '',
+        '#size' => 40,
+      ),
+      'field' => array(
+        '#title' => t('Field'),
+        '#type' => 'select',
+        '#default_value' => isset($form_state['values']['field']) ? $form_state['values']['field'] : 'dc.title',
+        '#options' => islandora_solr_get_fields('search_fields'),
+      ),
+    ),
+    'islandora_object_id' => array(
+      '#type' => 'hidden',
+      '#value' => $id,
+    ),
+    'submit' => array(
+      '#type' => 'submit',
+      '#value' => t('Search within Collection'),
+    ),
+  );
+  return $form;
 }
 
