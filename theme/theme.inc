@@ -28,6 +28,18 @@ function upitt_islandora_solr_search_extras_preprocess_islandora_objects_subset(
   }
 }
 
+function upitt_islandora_solr_search_extras_preprocess_islandora_basic_collection_grid(&$variables, $hook) {
+  $islandora_object = $variables['islandora_object'];
+  $form = drupal_get_form('search_in_collection', $islandora_object->id, $islandora_object->label);
+  $variables['collection_search'] = drupal_render($form);
+}
+
+function upitt_islandora_solr_search_extras_preprocess_islandora_basic_collection(&$variables, $hook) {
+  $islandora_object = $variables['islandora_object'];
+  $form = drupal_get_form('search_in_collection', $islandora_object->id, $islandora_object->label);
+  $variables['collection_search'] = drupal_render($form);
+}
+
 function upitt_islandora_solr_search_extras_preprocess_islandora_objects(&$variables) {
   $islandora_object = menu_get_object('islandora_object', 2);
   // $variables['view_links'] = array();

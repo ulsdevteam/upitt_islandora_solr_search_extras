@@ -35,6 +35,14 @@ function upitt_islandora_solr_search_extras_menu() {
 }
 
 /**
+ * Implements hook_init().
+ */
+function upitt_islandora_init() {
+  $path = drupal_get_path('module', 'upitt_islandora_solr_search_extras');
+  drupal_add_css("$path/css/solr_search_extras.css");
+}
+
+/**
  * Implements hook_theme().
  */
 function upitt_islandora_solr_search_extras_theme() {
@@ -50,6 +58,17 @@ function upitt_islandora_solr_search_extras_theme() {
         'total' => NULL,
         'pager_element' => 0,
       ),
+    ),
+    // to display collection search box
+    'islandora_basic_collection' => array(
+      'template' => 'theme/islandora-basic-collection',
+      'file' => 'theme/theme.inc',
+      'variables' => array('islandora_object' => NULL),
+    ),
+    'islandora_basic_collection_grid' => array(
+      'template' => 'theme/islandora-basic-collection-grid',
+      'file' => 'theme/theme.inc',
+      'variables' => array('islandora_object' => NULL),
     ),
     // to replace output of grid with solr_search
     'islandora_objects_grid' => array(
@@ -142,8 +161,6 @@ function upitt_islandora_solr_search_extras_search_specific($form, &$form_state,
  */
 function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_results) {
   $solr_fields = _get_solr_search_fields();
-  $path = drupal_get_path('module', 'upitt_islandora_solr_search_extras');
-  drupal_add_css("$path/css/solr_search_extras.css");
   $tmp_title = '';
   if (variable_get('upitt_islandora_solr_search_extras_showparent_searchresults')) {
     $solr_results = islandora_solr_prepare_solr_results($solr_results);
