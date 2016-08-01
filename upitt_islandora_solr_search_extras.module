@@ -340,12 +340,19 @@ function _inject_skey($url, $PID, $skey) {
  *   will cause the /from_search/{skey} URL modifications to not happen.
  */
 function _save_solr_search_session(&$skey, $solr_results, $solr_url = '') {
+  $append = ($solr_url <> '');
   if (!isset($solr_results['responseHeader']['params']) && ($solr_url == '')) {
     $skey = '';
     return;
   }
   if ($solr_url) {
-    $q = $solr_url;
+    $tmp = str_replace("/islandora/search/?islandora_solr_search_navigation=0&", "", $solr_url);
+    $filters = explode("&", $tmp);
+    foreach ($filters as $filter) {
+      @list($keyname, $param) = explode("=", $filter);
+      $q_arr[] = $param;
+    }
+    $q = implode(' AND ', $q_arr);
   }
   else {
     $q_arr = $solr_filters = array();
@@ -357,9 +364,7 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '') {
     $q = implode(' AND ', $q_arr);
   }
   $solr_base_filter = trim(variable_get('islandora_solr_base_filter'));
-/*  if (strstr($q, $solr_base_filter) <> '') {
-    $q = $solr_base_filter . ' AND (' . str_replace($solr_base_filter . ' AND ', '', $q) . ')';    
-  }*/
+
   $fl = 'PID,fgs_label_s';
   module_load_include('inc', 'islandora_solr_search', 'includes/utilities');
   $query_processor = new IslandoraSolrQueryProcessor();
@@ -399,17 +404,25 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '') {
         }
         $results[] = $rec['PID'] . '|' . str_replace("/", "", $rec['fgs_label_s']);
       }
-      db_insert('solr_search_sessions')->fields(array(
-        'skey' => $skey,
-        'solr_search_url' => $solr_url,
-        'numResults' => $numFound,
-        'results' => implode("/", $results) ))->execute();
+      if ($append) {
+        $results = db_query('SELECT results, solr_search_url, numResults FROM {solr_search_sessions} WHERE skey = :s', array(':s' => $skey))->fetchAssoc();
+        db_update('solr_search_sessions')->fields(array(
+          'results' => $results['results'] . '/' . implode("/", $results) ))->condition('skey', $skey, '=')->execute();
+      }
+      else {
+        db_insert('solr_search_sessions')->fields(array(
+          'skey' => $skey,
+          'solr_search_url' => $solr_url,
+          'numResults' => $numFound,
+          'results' => implode("/", $results) ))->execute();
+      }
     }
     else {
       $skey = '';
     }
   }
   catch (Exception $e) {
+    error_log('EXCEPTION in _save_solr_search_session ' . print_r($e, true));
     $skey = '';
   }
   return;
@@ -481,6 +494,7 @@ function _islandora_solr_pid_parent_search($child_object, $solr_fields, $options
       return $results;
     }
     catch (Exception $e) {
+      error_log('EXCEPTION in _islandora_solr_pid_parent_search ' . print_r($e, true));
       return array();
     }
   }
@@ -592,7 +606,7 @@ function _gen_solr_search_links($pid) {
 
     $this_idx = array_search($pid, $pids);
     if (count($pids) < $results['numResults'] && 
-      ($this_idx % variable_get('islandora_solr_num_of_results', 20) == (variable_get('islandora_solr_num_of_results', 20) - 1) )) {
+      (($this_idx % variable_get('islandora_solr_num_of_results', 20)) == (variable_get('islandora_solr_num_of_results', 20) - 1) )) {
       // Go get one more results now
       _save_solr_search_session($skey, NULL, $results['solr_search_url']);
     }
