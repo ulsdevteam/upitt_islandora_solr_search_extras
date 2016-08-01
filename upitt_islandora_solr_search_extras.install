@@ -11,3 +11,42 @@
 function upitt_islandora_solr_search_extras_uninstall() {
   variable_del('upitt_islandora_solr_search_extras_showparent_searchresults');
 }
+
+/**
+* Implementation of hook_schema().
+*/
+function upitt_islandora_solr_search_extras_schema() {
+  // create the database table that stores the solr session user keys
+  $schema['solr_search_sessions'] = array(
+    'description' => t('Store SOLR search session and fedora PID values of matching results'),
+    'fields' => array(
+      'skey' => array(
+        'description' => 'The primary identifier for a session key record.  A MD5 value.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE
+      ),
+      'solr_search_url' => array(
+        'description' => 'The URL for Return to Search functionality',
+        'type' => 'varchar',
+        'length' => 1000,
+        'not null' => TRUE
+      ),
+      'numResults' => array(
+        'description' => 'The total number of search results for the search query',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'results'    => array(
+        'description' => 'The PID|Title values.',
+        'type' => 'text',
+        'not null' => TRUE,
+        'size' => 'medium'
+      ), //this is last element of array
+    ),
+    'primary key' => array('skey'), //this is last element of array
+  );
+  return $schema;
+}
+

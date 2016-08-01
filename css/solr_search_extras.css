@@ -32,3 +32,8 @@
 #block-islandora-solr-basic-facets, #block-islandora-solr-sort {
   width: 88% !important;
 }
+
+.nextitem-link, .previtem-link {
+  float: left;
+}
+

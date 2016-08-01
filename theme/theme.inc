@@ -104,4 +104,3 @@ function _my_theme_solr_block($block, $block_module, $block_delta) {
 </div> 
 ';
 }
-

@@ -1,5 +1,5 @@
 name = University of Pittsburgh SOLR Search Extras
-description = To provide additional features upon the Islandora Solr Search module
+description = To provide additional features upon the Islandora Solr Search module.  Adds "Back to Search Results" link as well as Next and Previous when the page landing is from a SOLR search.
 package = Islandora Tools
 version = 7.x-1.6bg
 core = 7.x
