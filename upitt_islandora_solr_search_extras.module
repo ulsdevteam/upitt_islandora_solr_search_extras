@@ -152,7 +152,7 @@ function upitt_islandora_solr_search_extras_search_specific($form, &$form_state,
     }
   }
   else {
-    $solr_query = format_string('!field:*!value*', array(
+    $solr_query = format_string('!field:!value', array(
                 '!field' => 'RELS_EXT_isMemberOfCollection_uri_ms',
                 '!value' => Apache_Solr_Service::escape('info:fedora/' . $object),
         ));
