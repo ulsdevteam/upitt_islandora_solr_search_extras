@@ -356,6 +356,10 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '') {
     $solr_url = '/islandora/search/?islandora_solr_search_navigation=0&' . implode('&', $solr_filters);
     $q = implode(' AND ', $q_arr);
   }
+  $solr_base_filter = trim(variable_get('islandora_solr_base_filter'));
+/*  if (strstr($q, $solr_base_filter) <> '') {
+    $q = $solr_base_filter . ' AND (' . str_replace($solr_base_filter . ' AND ', '', $q) . ')';    
+  }*/
   $fl = 'PID,fgs_label_s';
   module_load_include('inc', 'islandora_solr_search', 'includes/utilities');
   $query_processor = new IslandoraSolrQueryProcessor();
@@ -374,7 +378,7 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '') {
   $solr = new Apache_Solr_Service($url['host'], $url['port'], $url['path'] . '/');
   $solr->setCreateDocuments(FALSE);
   try {
-    $search_results = $solr->search($query_processor->solrQuery, $query_processor->solrStart, $query_processor->solrLimit, $query_processor->solrParams, 'GET');
+    $search_results = $solr->search($query_processor->solrQuery, $query_processor->solrStart, $query_processor->solrLimit, $query_processor->solrParams, 'GET'); 
     $tmp = json_decode($search_results->getRawResponse(), TRUE);
     $results = array();
     $numFound = $tmp['response']['numFound'];
@@ -395,15 +399,15 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '') {
         }
         $results[] = $rec['PID'] . '|' . str_replace("/", "", $rec['fgs_label_s']);
       }
+      db_insert('solr_search_sessions')->fields(array(
+        'skey' => $skey,
+        'solr_search_url' => $solr_url,
+        'numResults' => $numFound,
+        'results' => implode("/", $results) ))->execute();
     }
     else {
       $skey = '';
     }
-    db_insert('solr_search_sessions')->fields(array(
-      'skey' => $skey,
-      'solr_search_url' => $solr_url,
-      'numResults' => $numFound,
-      'results' => implode("/", $results) ))->execute();
   }
   catch (Exception $e) {
     $skey = '';
@@ -554,15 +558,19 @@ function upitt_islandora_solr_search_extras_preprocess_page(&$vars) {
   global $user;
   $item = menu_get_item();
   if (is_array($item)) {
-    if ($item['map'][0] == 'user') {
+    if (($item['map'][0] == 'user') || ($item['path'] == 'islandora/object/%/from_search/%') || 
+      ($item['path'] == 'islandora/object/%')) {
       // remove sidebar for /user page in case it is there
       $vars['page']['sidebar'] = array();
     }
   }
   // if the second menu path is an islandora_object then get the links for Previous, Next, and Restun to Solr Search
   $islandora_object = menu_get_object('islandora_object', 2);
-  if ($islandora_object) {
+  if (($islandora_object) && ($item['path'] == 'islandora/object/%/from_search/%')) {
     $vars['solr_search_links'] = _gen_solr_search_links($islandora_object->id);
+    if (function_exists('islandora_retrieve_metadata_markup')) {
+      $vars['collection_metadata'] = islandora_retrieve_metadata_markup($islandora_object);
+    }
   }
 }
 
