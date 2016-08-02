@@ -294,16 +294,24 @@ function _get_skey($solr_results) {
     }
   }
   if (!$skey) {
-    $solr_filters = array();
+    $solr_filters = $used_filters = array();
+    $indexer = 0;
     foreach ($solr_results['responseHeader']['params']['fq'] as $k=>$filter) {
-      $solr_filters[] = 'f[' . $k . ']=' . $filter;
+      if (array_search($filter, $used_filters) === FALSE) {
+        $solr_filters[] = 'f[' . $indexer . ']=' . $filter;
+        $used_filters[] = $filter;
+        $indexer++;
+      }
     }
     $solr_url = '/islandora/search/?islandora_solr_search_navigation=0&' . implode('&', $solr_filters);
-
     $skey = db_query('SELECT skey FROM {solr_search_sessions} WHERE solr_search_url = :u', array(':u' => $solr_url))->fetchField();
     if (!$skey) {
       $skey = md5(date('c'));
-      _save_solr_search_session($skey, $solr_results, '');
+      _save_solr_search_session($skey, $solr_results, '', 0);
+    } else {
+      $results_per_page = variable_get('islandora_solr_num_of_results', 20);
+      $offset = (isset($_GET['page'])) ? $_GET['page'] * $results_per_page : 0;
+      _save_solr_search_session($skey, NULL, $solr_url, $offset);
     }
   }
   return $skey;
@@ -339,7 +347,7 @@ function _inject_skey($url, $PID, $skey) {
  *   cannot be created for any other reason, the value of $skey is set to an empty string which
  *   will cause the /from_search/{skey} URL modifications to not happen.
  */
-function _save_solr_search_session(&$skey, $solr_results, $solr_url = '') {
+function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offset) {
   $append = ($solr_url <> '');
   if (!isset($solr_results['responseHeader']['params']) && ($solr_url == '')) {
     $skey = '';
@@ -364,15 +372,14 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '') {
     $q = implode(' AND ', $q_arr);
   }
   $solr_base_filter = trim(variable_get('islandora_solr_base_filter'));
-
   $fl = 'PID,fgs_label_s';
   module_load_include('inc', 'islandora_solr_search', 'includes/utilities');
   $query_processor = new IslandoraSolrQueryProcessor();
   $query_processor->solrQuery = $q;
   // Calculate the offset by the current page of search results by looking for
   // a page _GET parameter
-  $page = (isset($_GET['page'])) ? $_GET['page'] : 0;
   $results_per_page = variable_get('islandora_solr_num_of_results', 20);
+  $page = (isset($_GET['page'])) ? $_GET['page'] : round((1 + $offset) / $results_per_page);
   $query_processor->solrStart = $page * $results_per_page;
   $query_processor->solrLimit = $results_per_page;
   $query_processor->solrParams = array(
@@ -405,9 +412,9 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '') {
         $results[] = $rec['PID'] . '|' . str_replace("/", "", $rec['fgs_label_s']);
       }
       if ($append) {
-        $results = db_query('SELECT results, solr_search_url, numResults FROM {solr_search_sessions} WHERE skey = :s', array(':s' => $skey))->fetchAssoc();
+        $existing_results = db_query('SELECT results, solr_search_url, numResults FROM {solr_search_sessions} WHERE skey = :s', array(':s' => $skey))->fetchAssoc();
         db_update('solr_search_sessions')->fields(array(
-          'results' => $results['results'] . '/' . implode("/", $results) ))->condition('skey', $skey, '=')->execute();
+          'results' => $existing_results['results'] . '/' . implode("/", $results) ))->condition('skey', $skey, '=')->execute();
       }
       else {
         db_insert('solr_search_sessions')->fields(array(
@@ -588,7 +595,28 @@ function upitt_islandora_solr_search_extras_preprocess_page(&$vars) {
   }
 }
 
-// returns array of links for a page that came from refer: solr search results.
+/**
+ * Helper function to get the PIDS/Titles for a given skey value.  Returns the total number of results.
+ */
+function _get_pids_and_titles($skey, &$pids, &$titles, &$solr_search_url) {
+  $pids = $titles = array();
+  $results = db_query('SELECT results, solr_search_url, numResults FROM {solr_search_sessions} WHERE skey = :s', array(':s' => $skey))->fetchAssoc();
+  $results_arr = explode("/", $results['results']);
+  foreach ($results_arr as $pid_title_result) {
+    @list($pid, $title) = explode("|", $pid_title_result);
+    $pid = trim($pid);  $title = trim($title);
+    if ($pid && $title) {
+      $pids[] = $pid;
+      $titles[] = $title;
+    }
+  }
+  $solr_search_url = $results['solr_search_url'];  
+  return $results['numResults'];
+}
+
+/**
+ * This returns array of links for a page that came from refer: solr search results.
+ */
 function _gen_solr_search_links($pid) {
   $cur_url = $_SERVER['REQUEST_URI'];
   $parts = explode("/", $cur_url);
@@ -597,18 +625,16 @@ function _gen_solr_search_links($pid) {
   }
   elseif ($parts[4] == 'from_search') {
     $skey = $parts[5];
-    $results = db_query('SELECT results, solr_search_url, numResults FROM {solr_search_sessions} WHERE skey = :s', array(':s' => $skey))->fetchAssoc();
-    $results_arr = explode("/", $results['results']);
     $pids = $titles = array();
-    foreach ($results_arr as $pid_title_result) {
-      @list($pids[], $titles[]) = explode("|", $pid_title_result);
-    }
-
+    $solr_search_url = '';
+    $numResults = _get_pids_and_titles($skey, $pids, $titles, $solr_search_url);
     $this_idx = array_search($pid, $pids);
-    if (count($pids) < $results['numResults'] && 
-      (($this_idx % variable_get('islandora_solr_num_of_results', 20)) == (variable_get('islandora_solr_num_of_results', 20) - 1) )) {
+    if (count($pids) < $numResults && 
+      ($this_idx % variable_get('islandora_solr_num_of_results', 20) == (variable_get('islandora_solr_num_of_results', 20) - 1) )) {
       // Go get one more results now
-      _save_solr_search_session($skey, NULL, $results['solr_search_url']);
+      _save_solr_search_session($skey, NULL, $solr_search_url, count($pids));
+      $numResults = _get_pids_and_titles($skey, $pids, $titles, $solr_search_url);
+      $this_idx = array_search($pid, $pids);
     }
 
     if (count($pids) > 0) {
@@ -624,7 +650,7 @@ function _gen_solr_search_links($pid) {
         );
       }
       // The link function messes up the query by reencoding the parts that are already encoded.
-      $links[] = '<a href="' . str_replace('"', '%22', $results['solr_search_url']) . '">Back to Search Results</a>';
+      $links[] = '<a href="' . str_replace('"', '%22', $solr_search_url) . '">Back to Search Results</a>';
       if ($this_idx < count($pids) && !($this_idx === FALSE)) {
         $links[] = l('Next ›', 
           _inject_skey('', $pids[$this_idx + 1], $skey),
