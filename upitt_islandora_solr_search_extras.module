@@ -584,6 +584,10 @@ function upitt_islandora_solr_search_extras_preprocess_page(&$vars) {
       // remove sidebar for /user page in case it is there
       $vars['page']['sidebar'] = array();
     }
+    if ($item['path'] == 'islandora/search' || $item['path'] == 'islandora/search/%') {
+      $path = drupal_get_path('module', 'upitt_islandora_solr_search_extras');
+      drupal_add_css("$path/css/solr_search_extras.css");
+    }
   }
   // if the second menu path is an islandora_object then get the links for Previous, Next, and Restun to Solr Search
   $islandora_object = menu_get_object('islandora_object', 2);

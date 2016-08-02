@@ -36,13 +36,18 @@
           <ul class="solr-fields islandora-inline-metadata">
             <?php foreach($result['page_solr_doc'] as $key => $value): ?>
               <li class="solr-value solr-field-orig <?php print $value['class']; ?>">
-                <?php print $value['value']; ?>
+                <div class="solr-label">
+                   <?php print $value['label']; ?>
+                </div>
               </li>
             <?php endforeach; ?>
           </ul>
           <ul class="solr-fields islandora-inline-metadata">
             <?php foreach($result['solr_doc'] as $key => $value): ?>
               <li class="solr-value solr-field-parent <?php print $value['class']; ?>">
+                <div class="solr-label">
+                   <?php print $value['label']; ?>
+                </div>
                 <?php print $value['value']; ?>
               </li>
             <?php endforeach; ?>
