@@ -37,3 +37,11 @@
   float: left;
 }
 
+.solr-label {
+  display: inline-block;
+  min-width: 86px;
+  padding-right: 10px;
+  color: #777;
+  font-size: smaller;
+}
+
