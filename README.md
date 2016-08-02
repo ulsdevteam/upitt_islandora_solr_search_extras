@@ -20,15 +20,16 @@ NOTE:  In order for the search navigation links to appear, several changes need 
 The CSS additions are:
 
 .searchnav {
-  text-align: center;
+        height: 0.8em;
+	text-align: center;
 }
 .searchnav-links {
-  list-style: none;
-  display: inline-block;
+	list-style: none;
+	display: inline-block;
 }
 .searchnav-links li {
-  float: left;
-  margin: 0 10px;
+	float: left;
+	margin: 0 10px;
 }
 
 ### TODO:
