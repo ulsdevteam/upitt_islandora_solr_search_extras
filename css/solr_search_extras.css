@@ -54,3 +54,8 @@
 .solr-value {
   clear: both;
 }
+
+.solr-metafields {
+  width: 62%;
+  float: right;
+}
