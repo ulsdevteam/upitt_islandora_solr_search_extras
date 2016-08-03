@@ -22,10 +22,10 @@ function upitt_islandora_solr_search_extras_preprocess_islandora_objects_subset(
     }
     $variables['collection_metadata'] = islandora_retrieve_metadata_markup($islandora_object);
   }
-  // $variables['display_links'] = array();
-  if (isset($_GET['display']) && $_GET['display'] <> 'grid') {
-    $variables['pager'] = '';
-  }
+  $variables['display_links'] = array();
+//  if (isset($_GET['display']) && $_GET['display'] <> 'grid') {
+  $variables['pager'] = '';
+//  }
 }
 
 function upitt_islandora_solr_search_extras_preprocess_islandora_basic_collection_grid(&$variables, $hook) {
@@ -38,6 +38,7 @@ function upitt_islandora_solr_search_extras_preprocess_islandora_basic_collectio
   $islandora_object = $variables['islandora_object'];
   $form = drupal_get_form('search_in_collection', $islandora_object->id, $islandora_object->label);
   $variables['collection_search'] = drupal_render($form);
+  $variables['pager'] = '';
 }
 
 function upitt_islandora_solr_search_extras_preprocess_islandora_objects(&$variables) {
@@ -48,7 +49,8 @@ function upitt_islandora_solr_search_extras_preprocess_islandora_objects(&$varia
 
 function upitt_islandora_solr_search_extras_preprocess_islandora_objects_grid(&$variables) {
   $islandora_object = menu_get_object('islandora_object', 2);
-  // $variables['view_links'] = array();
+  $variables['view_links'] = array();
+  $variables['whamjack_sidebar'] = _get_solr_sidebar_blocks();
   _get_solr_results($islandora_object, $variables);
   $form = drupal_get_form('search_in_collection', $islandora_object->id, $islandora_object->label);
   $variables['collection_search'] = drupal_render($form);
@@ -56,7 +58,7 @@ function upitt_islandora_solr_search_extras_preprocess_islandora_objects_grid(&$
 
 function upitt_islandora_solr_search_extras_preprocess_islandora_objects_list(&$variables) {
   $islandora_object = menu_get_object('islandora_object', 2);
-  // $variables['view_links'] = array();
+  $variables['view_links'] = array();
   _get_solr_results($islandora_object, $variables);
   $form = drupal_get_form('search_in_collection', $islandora_object->id, $islandora_object->label);
   $variables['collection_search'] = drupal_render($form);

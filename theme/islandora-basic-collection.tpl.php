@@ -1,3 +1,4 @@
+<!-- template islandora-basic-collection.tpl.php -->
 <?php
 
 /**

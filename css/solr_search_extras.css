@@ -1,3 +1,14 @@
+#two-col-left-main #sidebar {
+  width: 240px !important;
+  float: left !important;
+}
+
+#sidebar .region-sidebar {
+  width: 95% !important;
+  margin: 0 !important;
+  padding-left: 2px;
+}
+
 .fieldset-wrapper {
   margin-left: 0 !important;
 }
@@ -9,8 +20,8 @@
 }
 
 .search-result-wrapper {
-  height: 250px;
-  width: 250px;
+  height: none !important;
+  width: 212px !important;
   position: relative;
   float: left;
   padding: 0;
@@ -23,6 +34,8 @@
 
 .islandora-solr-content {
   margin-top: 0 !important;
+  width: 73%;
+  float: left;
 }
 
 .islandora-solr-search-result {

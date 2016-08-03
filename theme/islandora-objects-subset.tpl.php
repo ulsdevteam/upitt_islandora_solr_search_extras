@@ -1,3 +1,4 @@
+<!-- template islandora-objects-subset.tpl.php -->
 <?php print $messages; ?>
 
   <?php if ($tabs): ?>

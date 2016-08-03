@@ -1,3 +1,4 @@
+<!-- template islandora-objects-search-results.tpl.php -->
 <?php
 
 /**

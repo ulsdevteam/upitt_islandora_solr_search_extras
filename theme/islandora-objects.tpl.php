@@ -5,6 +5,7 @@
  * Render a bunch of objects in a list or grid view.
  */
 ?>
+<!-- template islandora-objects.tpl.php -->
 <div class="islandora-objects clearfix">
   <span class="islandora-objects-display-switch">
     <?php 
