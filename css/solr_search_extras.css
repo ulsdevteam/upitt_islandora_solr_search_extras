@@ -1,5 +1,5 @@
-#two-col-left-main #sidebar {
-  width: 240px !important;
+.islandora-basic-collection #sidebar, #two-col-left-main #sidebar {
+  width: 253px !important;
   float: left !important;
 }
 
@@ -34,7 +34,8 @@
 
 .islandora-solr-content {
   margin-top: 0 !important;
-  width: 73%;
+  margin-left: 1%;
+  width: 70%;
   float: left;
 }
 
