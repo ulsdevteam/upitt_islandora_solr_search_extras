@@ -48,7 +48,9 @@
                 <div class="solr-label">
                    <?php print $value['label']; ?>
                 </div>
-                <?php print $value['value']; ?>
+                <div class="solr-fieldvalue">
+                  <?php print $value['value']; ?>
+                </div>
               </li>
             <?php endforeach; ?>
           </ul>

@@ -39,9 +39,18 @@
 
 .solr-label {
   display: inline-block;
-  min-width: 86px;
+  min-width: 19%;
   padding-right: 10px;
   color: #777;
   font-size: smaller;
+  float: left;
 }
 
+.solr-fieldvalue {
+  width: 80%;
+  float: right;
+}
+
+.solr-value {
+  clear: both;
+}
