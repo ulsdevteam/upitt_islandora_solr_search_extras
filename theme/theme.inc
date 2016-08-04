@@ -59,6 +59,7 @@ function upitt_islandora_solr_search_extras_preprocess_islandora_objects_grid(&$
 function upitt_islandora_solr_search_extras_preprocess_islandora_objects_list(&$variables) {
   $islandora_object = menu_get_object('islandora_object', 2);
   $variables['view_links'] = array();
+  $variables['whamjack_sidebar'] = _get_solr_sidebar_blocks();
   _get_solr_results($islandora_object, $variables);
   $form = drupal_get_form('search_in_collection', $islandora_object->id, $islandora_object->label);
   $variables['collection_search'] = drupal_render($form);
