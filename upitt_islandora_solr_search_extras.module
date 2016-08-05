@@ -318,7 +318,8 @@ function _get_skey($solr_results) {
 }
 
 function _inject_skey_to_markup($markup, $PID, $skey) {
-  if (!$skey) {
+  // Since these solr results are also rendered on a collection page, only inject if result is for the search page!
+  if ((!$skey) || (strstr($_SERVER['REQUEST_URI'], 'collection/') <> '')) {
     return $markup;
   }
   preg_match('/^<a.*?href=(["\'])(.*?)\1.*$/', $markup, $m);
@@ -327,7 +328,8 @@ function _inject_skey_to_markup($markup, $PID, $skey) {
 }
 
 function _inject_skey($url, $PID, $skey) {
-  if (!$skey) {
+  // Since these solr results are also rendered on a collection page, only inject if result is for the search page!
+  if ((!$skey) || (strstr($_SERVER['REQUEST_URI'], 'collection/') <> '')) {
     return $url;
   }
   if (!$url) {
@@ -429,7 +431,8 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
     }
   }
   catch (Exception $e) {
-    error_log('EXCEPTION in _save_solr_search_session ' . print_r($e, true));
+    error_log('EXCEPTION in _save_solr_search_session : called from ' . $_SERVER['REQUEST_URI'] . '
+' . print_r($e, true));
     $skey = '';
   }
   return;
@@ -501,7 +504,8 @@ function _islandora_solr_pid_parent_search($child_object, $solr_fields, $options
       return $results;
     }
     catch (Exception $e) {
-      error_log('EXCEPTION in _islandora_solr_pid_parent_search ' . print_r($e, true));
+      error_log('EXCEPTION in _save_solr_search_session : called from ' . $_SERVER['REQUEST_URI'] . '
+' . print_r($e, true));
       return array();
     }
   }
@@ -592,7 +596,9 @@ function upitt_islandora_solr_search_extras_preprocess_page(&$vars) {
   // if the second menu path is an islandora_object then get the links for Previous, Next, and Restun to Solr Search
   $islandora_object = menu_get_object('islandora_object', 2);
   if (($islandora_object) && ($item['path'] == 'islandora/object/%/from_search/%')) {
-    $vars['solr_search_links'] = _gen_solr_search_links($islandora_object->id);
+    if (isset($_SERVER['HTTP_REFERER']) && (strstr($_SERVER['HTTP_REFERER'], '/from_search/') <> '')) {
+      $vars['solr_search_links'] = _gen_solr_search_links($islandora_object->id);
+    }
     if (function_exists('islandora_retrieve_metadata_markup')) {
       $vars['collection_metadata'] = islandora_retrieve_metadata_markup($islandora_object);
     }
@@ -605,6 +611,7 @@ function upitt_islandora_solr_search_extras_preprocess_page(&$vars) {
 function _get_pids_and_titles($skey, &$pids, &$titles, &$solr_search_url) {
   $pids = $titles = array();
   $results = db_query('SELECT results, solr_search_url, numResults FROM {solr_search_sessions} WHERE skey = :s', array(':s' => $skey))->fetchAssoc();
+
   $results_arr = explode("/", $results['results']);
   foreach ($results_arr as $pid_title_result) {
     @list($pid, $title) = explode("|", $pid_title_result);
