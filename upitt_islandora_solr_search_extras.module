@@ -580,7 +580,7 @@ function upitt_islandora_solr_search_extras_preprocess_page(&$vars) {
   $item = menu_get_item();
   if (is_array($item)) {
     if (($item['map'][0] == 'user') || ($item['path'] == 'islandora/object/%/from_search/%') || 
-      ($item['path'] == 'islandora/object/%')) {
+      ($item['path'] == 'islandora/object/%') || ($item['path'] == 'islandora/object/%/datastream/%/htmledit')) {
       // remove sidebar for /user page in case it is there
       $vars['page']['sidebar'] = array();
     }
