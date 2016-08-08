@@ -38,14 +38,51 @@ function upitt_islandora_solr_search_extras_schema() {
         'unsigned' => TRUE,
         'not null' => TRUE,
       ),
+      'lastmod' => array(
+        'description' => 'Timestamp for record update',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      )
+      /*
       'results'    => array(
         'description' => 'The PID|Title values.',
         'type' => 'text',
         'not null' => TRUE,
         'size' => 'medium'
       ), //this is last element of array
+      */
     ),
     'primary key' => array('skey'), //this is last element of array
+  );
+  $schema['solr_search_skey_results'] = array(
+    'fields' => array(
+      'skey' => array(
+        'description' => 'The primary identifier for a session key record.  A MD5 value.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE
+      ),
+      'PID' => array(
+        'description' => 'The fedora PID value for this result record.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'offset' => array(
+        'description' => 'The actual offset for this result from the related SOLR search.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'title' => array(
+        'description' => 'The title from the underlying fedora object.',
+        'type' => 'varchar',
+        'length' => 100,
+        'not null' => TRUE
+      ),
+    ),
+    'primary key' => array('skey', 'PID'), //this is last element of array
   );
   return $schema;
 }

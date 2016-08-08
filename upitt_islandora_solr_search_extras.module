@@ -179,6 +179,7 @@ function upitt_islandora_solr_search_extras_search_specific($form, &$form_state,
  *   Returns the themed solr search results.
  */
 function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_results) {
+  dpm($solr_results);
   // The skey value will need to be written into the links for pages as handled by
   // /islandora/object/%islandora_object/from_search/% menu route above.
   $skey = _get_skey($solr_results);
@@ -285,6 +286,7 @@ function _get_skey($solr_results) {
   if (!isset($solr_results['responseHeader']['params'])) {
     return '';
   }
+  $skey = NULL;
   // The skey could come from refer_url if user clicked Return to Search Results.
   if (isset($_SERVER['HTTP_REFERER']) && (strstr($_SERVER['HTTP_REFERER'], '/from_search/') <> '')) {
     $parts = explode("/", $_SERVER['HTTP_REFERER']);
@@ -413,17 +415,34 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
         }
         $results[] = $rec['PID'] . '|' . str_replace("/", "", $rec['fgs_label_s']);
       }
+      // Regardless of $append, update the lastmod for the master record.
+
       if ($append) {
-        $existing_results = db_query('SELECT results, solr_search_url, numResults FROM {solr_search_sessions} WHERE skey = :s', array(':s' => $skey))->fetchAssoc();
         db_update('solr_search_sessions')->fields(array(
-          'results' => $existing_results['results'] . '/' . implode("/", $results) ))->condition('skey', $skey, '=')->execute();
+          // 'results' => $existing_results['results'] . '/' . implode("/", $results)
+          'lastmod' => 'UNIX_TIMESTAMP(now())',
+          ))->condition('skey', $skey, '=')->execute();
       }
       else {
         db_insert('solr_search_sessions')->fields(array(
           'skey' => $skey,
           'solr_search_url' => $solr_url,
           'numResults' => $numFound,
-          'results' => implode("/", $results) ))->execute();
+          'lastmod' => 'UNIX_TIMESTAMP(now())',
+          // 'results' => implode("/", $results)
+          ))->execute();
+      }
+
+      $this_offset = $offset;
+      foreach ($results as $result) {
+        @list($result_pid, $result_title) = explode("|", $result);
+        db_insert('solr_search_skey_results')->fields(array(
+          'skey' => $skey,
+          'PID' => $result_pid,
+          'offset' => $this_offset,
+          'title' => $result_title
+        ))->execute();
+        $this_offset++;
       }
     }
     else {
@@ -612,12 +631,13 @@ function upitt_islandora_solr_search_extras_preprocess_page(&$vars) {
  */
 function _get_pids_and_titles($skey, &$pids, &$titles, &$solr_search_url) {
   $pids = $titles = array();
-  $results = db_query('SELECT results, solr_search_url, numResults FROM {solr_search_sessions} WHERE skey = :s', array(':s' => $skey))->fetchAssoc();
+  $results = db_query('SELECT r.PID, r.title, s.solr_search_url, s.numResults FROM {solr_search_sessions} s JOIN {solr_search_skey_results} r ON r.skey = s.skey WHERE s.skey = :s', array(':s' => $skey))->fetchAssoc();
 
   $results_arr = explode("/", $results['results']);
   foreach ($results_arr as $pid_title_result) {
-    @list($pid, $title) = explode("|", $pid_title_result);
-    $pid = trim($pid);  $title = trim($title);
+    $pid = $pid_title_result['PID'];
+    $title = $pid_title_result['title'];
+    //    $pid = trim($pid);  $title = trim($title);
     if ($pid && $title) {
       $pids[] = $pid;
       $titles[] = $title;
