@@ -24,13 +24,13 @@ function upitt_islandora_solr_search_extras_schema() {
         'description' => 'The primary identifier for a session key record.  A MD5 value.',
         'type' => 'varchar',
         'length' => 32,
-        'not null' => TRUE
+        'not null' => TRUE,
       ),
       'solr_search_url' => array(
         'description' => 'The URL for Return to Search functionality',
         'type' => 'varchar',
         'length' => 1000,
-        'not null' => TRUE
+        'not null' => TRUE,
       ),
       'numResults' => array(
         'description' => 'The total number of search results for the search query',
@@ -44,15 +44,8 @@ function upitt_islandora_solr_search_extras_schema() {
         'unsigned' => TRUE,
         'not null' => TRUE,
       )
-      /*
-      'results'    => array(
-        'description' => 'The PID|Title values.',
-        'type' => 'text',
-        'not null' => TRUE,
-        'size' => 'medium'
-      ), //this is last element of array
-      */
     ),
+    'indexes' => array('sss_solr_search_url' => array('solr_search_url')),
     'primary key' => array('skey'), //this is last element of array
   );
   $schema['solr_search_skey_results'] = array(
@@ -61,12 +54,12 @@ function upitt_islandora_solr_search_extras_schema() {
         'description' => 'The primary identifier for a session key record.  A MD5 value.',
         'type' => 'varchar',
         'length' => 32,
-        'not null' => TRUE
+        'not null' => TRUE,
       ),
       'PID' => array(
         'description' => 'The fedora PID value for this result record.',
-        'type' => 'int',
-        'unsigned' => TRUE,
+        'type' => 'varchar',
+        'length' => 100,
         'not null' => TRUE,
       ),
       'offset' => array(
@@ -79,10 +72,10 @@ function upitt_islandora_solr_search_extras_schema() {
         'description' => 'The title from the underlying fedora object.',
         'type' => 'varchar',
         'length' => 100,
-        'not null' => TRUE
+        'not null' => TRUE,
       ),
     ),
-    'primary key' => array('skey', 'PID'), //this is last element of array
+    'primary key' => array('skey', 'PID', 'offset'), //this is last element of array
   );
   return $schema;
 }
