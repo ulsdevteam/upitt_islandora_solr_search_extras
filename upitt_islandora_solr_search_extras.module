@@ -431,7 +431,8 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
     }
   }
   catch (Exception $e) {
-    error_log('EXCEPTION in _save_solr_search_session : called from ' . $_SERVER['REQUEST_URI'] . '
+    error_log('EXCEPTION in _save_solr_search_session : called from ' . $_SERVER['SERVER_NAME'] .
+' - ' . $_SERVER['REQUEST_URI'] . '
 ' . print_r($e, true));
     $skey = '';
   }
@@ -504,7 +505,8 @@ function _islandora_solr_pid_parent_search($child_object, $solr_fields, $options
       return $results;
     }
     catch (Exception $e) {
-      error_log('EXCEPTION in _save_solr_search_session : called from ' . $_SERVER['REQUEST_URI'] . '
+      error_log('EXCEPTION in _save_solr_search_session : called from ' . $_SERVER['SERVER_NAME'] .
+$_SERVER['REQUEST_URI'] . '
 ' . print_r($e, true));
       return array();
     }
