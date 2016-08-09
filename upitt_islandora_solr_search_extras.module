@@ -10,6 +10,7 @@ define('UPITT_ISLANDORA_SOLR_SEARCH_EXTRAS_MANAGE', 'manage upitt solr search');
 
 // constant
 define('CST_ISLANDORA_PATH', drupal_get_path('module', 'islandora'));
+define('CST_SESSION_LIFETIME', 60 * 10);
 
 /**
  * Implements hook_menu().
@@ -282,6 +283,9 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
 }
 
 function _get_skey($solr_results) {
+  $lastmod_limit = time() - CST_SESSION_LIFETIME;
+  db_query('DELETE FROM {solr_search_skey_results} WHERE skey IN (SELECT skey FROM {solr_search_sessions} WHERE lastmod < :lastmod_limit)', array(':lastmod_limit' => $lastmod_limit));
+  db_query('DELETE FROM {solr_search_sessions WHERE lastmod < :lastmod_limit', array(':lastmod_limit' => $lastmod_limit));
   if (!isset($solr_results['responseHeader']['params'])) {
     return '';
   }
@@ -306,7 +310,7 @@ function _get_skey($solr_results) {
         $indexer++;
       }
     }
-    if ($request_uri) {
+    if ($request_uri && $request_uri <> '/islandora/search') {
       $solr_filters[] = 'f[' . $indexer . ']=' . $request_uri;
     }
 
@@ -321,6 +325,9 @@ function _get_skey($solr_results) {
       _save_solr_search_session($skey, NULL, $solr_url, $offset, $results_per_page);
     }
   }
+  $lastmod = time();
+  db_query('UPDATE {solr_search_sessions} SET `lastmod` = :lastmod WHERE skey = :skey', array('skey' => $skey, 'lastmod' => $lastmod));
+
   return $skey;
 }
 
@@ -369,7 +376,7 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
       @list($keyname, $param) = explode("=", $filter);
       $q_arr[] = $param;
     }
-    $q = implode(' AND ', $q_arr);
+    $q = ((count($q_arr) > 0) ? '(' : '') . implode(') AND (', $q_arr) . ((count($q_arr) > 0) ? ')' : '');
   }
   else {
     $request_uri = urldecode(str_replace('/islandora/search/', '', $_SERVER['REQUEST_URI']));
@@ -384,8 +391,8 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
         $used_filters[] = $filter;
       }
     }
-    if ($request_uri) {
-      $solr_filters[] = 'f[' . $indexer . ']=' . $request_uri;
+    if ($request_uri && $request_uri <> '/islandora/search') {
+      $solr_filters[] = 'f[' . $filter_index . ']=' . $request_uri;
       $q_arr[] = $request_uri;
     }
     $solr_url = '/islandora/search/?islandora_solr_search_navigation=0&' . implode('&', $solr_filters);
@@ -441,9 +448,6 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
           'lastmod' => $lastmod,
           // 'results' => implode("/", $results)
           ))->execute();
-      }
-      else {
-        db_query('UPDATE {solr_search_sessions} SET `lastmod` = :lastmod WHERE skey = :skey', array('skey' => $skey, 'lastmod' => $lastmod));
       }
 
       $this_offset = $offset;
