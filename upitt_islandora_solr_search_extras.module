@@ -296,6 +296,7 @@ function _get_skey($solr_results) {
   }
   if (!$skey) {
     $request_uri = urldecode(str_replace('/islandora/search/', '', $_SERVER['REQUEST_URI']));
+    @list($request_uri, $junk) = explode('?', $request_uri);
     $solr_filters = $used_filters = array();
     $indexer = 0;
     foreach ($solr_results['responseHeader']['params']['fq'] as $k=>$filter) {
@@ -372,6 +373,7 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
   }
   else {
     $request_uri = urldecode(str_replace('/islandora/search/', '', $_SERVER['REQUEST_URI']));
+    @list($request_uri, $junk) = explode('?', $request_uri);
     $used_filters = $q_arr = $solr_filters = array();
     $filter_index = 0;
     foreach ($solr_results['responseHeader']['params']['fq'] as $k=>$filter) {
