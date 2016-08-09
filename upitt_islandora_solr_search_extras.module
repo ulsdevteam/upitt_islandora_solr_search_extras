@@ -295,6 +295,7 @@ function _get_skey($solr_results) {
     }
   }
   if (!$skey) {
+    $request_uri = urldecode(str_replace('/islandora/search/', '', $_SERVER['REQUEST_URI']));
     $solr_filters = $used_filters = array();
     $indexer = 0;
     foreach ($solr_results['responseHeader']['params']['fq'] as $k=>$filter) {
@@ -304,6 +305,10 @@ function _get_skey($solr_results) {
         $indexer++;
       }
     }
+    if ($request_uri) {
+      $solr_filters[] = 'f[' . $indexer . ']=' . $request_uri;
+    }
+
     $solr_url = '/islandora/search/?islandora_solr_search_navigation=0&' . implode('&', $solr_filters);
     $skey = db_query('SELECT s.skey FROM {solr_search_sessions} s JOIN {solr_search_skey_results} r ON (r.skey = s.skey) WHERE s.solr_search_url = :u', array(':u' => $solr_url))->fetchField();
     $results_per_page = variable_get('islandora_solr_num_of_results', 20);
@@ -366,6 +371,7 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
     $q = implode(' AND ', $q_arr);
   }
   else {
+    $request_uri = urldecode(str_replace('/islandora/search/', '', $_SERVER['REQUEST_URI']));
     $used_filters = $q_arr = $solr_filters = array();
     $filter_index = 0;
     foreach ($solr_results['responseHeader']['params']['fq'] as $k=>$filter) {
@@ -375,6 +381,10 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
         $filter_index++;
         $used_filters[] = $filter;
       }
+    }
+    if ($request_uri) {
+      $solr_filters[] = 'f[' . $indexer . ']=' . $request_uri;
+      $q_arr[] = $request_uri;
     }
     $solr_url = '/islandora/search/?islandora_solr_search_navigation=0&' . implode('&', $solr_filters);
     $q = ((count($q_arr) > 0) ? '(' : '') . implode(') AND (', $q_arr) . ((count($q_arr) > 0) ? ')' : '');
