@@ -385,7 +385,7 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
     $filter_index = 0;
     foreach ($solr_results['responseHeader']['params']['fq'] as $k=>$filter) {
       if (array_search($filter, $used_filters) === FALSE) {
-        $solr_filters[] = 'f[' . $k . ']=' . $filter;
+        $solr_filters[] = 'f[' . $filter_index . ']=' . $filter;
         $q_arr[] = $filter;
         $filter_index++;
         $used_filters[] = $filter;
