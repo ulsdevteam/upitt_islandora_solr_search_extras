@@ -366,13 +366,18 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
     $q = implode(' AND ', $q_arr);
   }
   else {
-    $q_arr = $solr_filters = array();
+    $used_filters = $q_arr = $solr_filters = array();
+    $filter_index = 0;
     foreach ($solr_results['responseHeader']['params']['fq'] as $k=>$filter) {
-      $solr_filters[] = 'f[' . $k . ']=' . $filter;
-      $q_arr[] = $filter;
+      if (array_search($filter, $used_filters) === FALSE) {
+        $solr_filters[] = 'f[' . $k . ']=' . $filter;
+        $q_arr[] = $filter;
+        $filter_index++;
+        $used_filters[] = $filter;
+      }
     }
     $solr_url = '/islandora/search/?islandora_solr_search_navigation=0&' . implode('&', $solr_filters);
-    $q = implode(' AND ', $q_arr);
+    $q = ((count($q_arr) > 0) ? '(' : '') . implode(') AND (', $q_arr) . ((count($q_arr) > 0) ? ')' : '');
   }
   $solr_base_filter = trim(variable_get('islandora_solr_base_filter'));
   $fl = 'PID,fgs_label_s';
@@ -385,7 +390,6 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
   $page = (isset($_GET['page'])) ? $_GET['page'] : round((1 + $by_page) / $results_per_page);
   $query_processor->solrStart = $offset; //$page * $results_per_page;
   $query_processor->solrLimit = $howmany; //results_per_page;
-
   $query_processor->solrParams = array(
     'fl' => $fl,
     'fq' => '',
@@ -602,7 +606,8 @@ function upitt_islandora_solr_search_extras_preprocess_page(&$vars) {
   $item = menu_get_item();
   if (is_array($item)) {
     if (($item['map'][0] == 'user') || ($item['path'] == 'islandora/object/%/from_search/%') || 
-      ($item['path'] == 'islandora/object/%') || ($item['path'] == 'islandora/object/%/datastream/%/htmledit')) {
+      ($item['path'] == 'islandora/object/%') || ($item['path'] == 'islandora/object/%/datastream/%/htmledit') ||
+      ($item['path'] == 'islandora/object/%/viewer')) {
       // remove sidebar for /user page in case it is there
       $vars['page']['sidebar'] = array();
     }
