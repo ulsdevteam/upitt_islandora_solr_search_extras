@@ -453,6 +453,8 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
       $this_offset = $offset;
       foreach ($results as $result) {
         @list($result_pid, $result_title) = explode("|", $result);
+        db_query('DELETE FROM {solr_search_skey_results} WHERE skey = :skey AND PID = :PID AND offset = :offset', 
+          array(':skey' => $skey, ':PID' => $result_pid, ':offset' => $this_offset));
         db_insert('solr_search_skey_results')->fields(array(
           'skey' => $skey,
           'PID' => $result_pid,
