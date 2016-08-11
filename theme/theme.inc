@@ -84,14 +84,14 @@ function _get_solr_sidebar_blocks() {
   $facets_block = module_invoke('islandora_solr', 'block_view', 'basic_facets');
   return '
 <div id="sidebar">
- <div class="widget">
+ <!-- div class="widget" -->
   <!-- div class="region region-sidebar" -->
         <div class="region region-sidebar">' .
 _my_theme_solr_block($sort_block, 'upitt_islandora_solr_search_extras', 'sort') .
     _my_theme_solr_block($facets_block, 'upitt_islandora_solr_search_extras', 'basic_facets') . '
         </div>
   <!-- /div -->
- </div>
+ <!--/div -->
 </div>
 ';
 }
