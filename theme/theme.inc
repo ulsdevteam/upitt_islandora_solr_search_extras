@@ -74,8 +74,11 @@ function upitt_islandora_solr_search_extras_preprocess_islandora_objects_list(&$
  */
 function _get_solr_results($islandora_object, &$variables) {
   if (isset($variables['solr_search']) && $variables['solr_search'] <> '') { return; }
-  // Inspect the islandora_object to get the PID match for the SOLR query.
-  $solr_query = 'RELS_EXT_isMemberOfCollection_uri_ms:"info:fedora/' . $islandora_object->id . '"';
+  // Inspect the islandora_object - if it is a collection model object, then use 
+  // RELS_EXT_isMemberOfCollection_uri_ms, else (for a book model), use RELS_EXT_isPageOf_uri_ms
+  // for the SOLR query.
+  $match_field = (in_array('islandora:bookCModel', $islandora_object->models)) ? 'RELS_EXT_isPageOf_uri_ms' : 'RELS_EXT_isMemberOfCollection_uri_ms';
+  $solr_query = $match_field.':"info:fedora/' . $islandora_object->id . '"';
   $variables['solr_search'] = islandora_solr($solr_query);
 }
 
