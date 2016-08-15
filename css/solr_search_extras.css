@@ -20,8 +20,8 @@
 }
 
 .search-result-wrapper {
-  height: none !important;
-  width: 212px !important;
+  height: none;
+  width: 212px;
   position: relative;
   float: left;
   padding: 0;
