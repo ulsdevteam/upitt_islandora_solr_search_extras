@@ -43,17 +43,32 @@ function upitt_islandora_solr_search_extras_preprocess_islandora_basic_collectio
 
 function upitt_islandora_solr_search_extras_preprocess_islandora_objects(&$variables) {
   $islandora_object = menu_get_object('islandora_object', 2);
-  // $variables['view_links'] = array();
   _get_solr_results($islandora_object, $variables);
+  $item = menu_get_item();
+  if (is_array($item)) {
+    if ($item['path'] == 'islandora/object/%/pages') {
+      $variables['display_links'] = array();
+      $variables['pager'] = '';
+    }
+  }
+
 }
 
 function upitt_islandora_solr_search_extras_preprocess_islandora_objects_grid(&$variables) {
   $islandora_object = menu_get_object('islandora_object', 2);
+  // Depending on the actual page, need to control whether or not the sidebar and other elements appear.
+  $item = menu_get_item();
+  $show_sidebar = TRUE;
+  if (is_array($item)) {
+    if ($item['path'] == 'islandora/object/%/pages') {
+      $show_sidebar = FALSE;
+    }
+  }
   $variables['view_links'] = array();
-  $variables['whamjack_sidebar'] = _get_solr_sidebar_blocks();
+  $variables['whamjack_sidebar'] = ($show_sidebar) ? _get_solr_sidebar_blocks() : '';
   _get_solr_results($islandora_object, $variables);
-  $form = drupal_get_form('search_in_collection', $islandora_object->id, $islandora_object->label);
-  $variables['collection_search'] = drupal_render($form);
+//  $form = drupal_get_form('search_in_collection', $islandora_object->id, $islandora_object->label);
+//  $variables['collection_search'] = drupal_render($form);
 }
 
 function upitt_islandora_solr_search_extras_preprocess_islandora_objects_list(&$variables) {

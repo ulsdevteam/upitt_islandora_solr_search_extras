@@ -620,7 +620,6 @@ function search_in_collection(array $form, array &$form_state, $id, $objLabel) {
  * This code will remove the sidebar and must check to see whether or not the path is on a user page.
  */
 function upitt_islandora_solr_search_extras_preprocess_page(&$vars) {
-  global $user;
   $item = menu_get_item();
   if (is_array($item)) {
     if (($item['map'][0] == 'user') || ($item['path'] == 'islandora/object/%/from_search/%') || 
