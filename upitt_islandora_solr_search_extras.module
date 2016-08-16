@@ -406,7 +406,7 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
   // Calculate the offset by the current page of search results by looking for
   // a page _GET parameter
   $results_per_page = variable_get('islandora_solr_num_of_results', 20);
-  $page = (isset($_GET['page'])) ? $_GET['page'] : round((1 + $by_page) / $results_per_page);
+  $page = (isset($_GET['page'])) ? $_GET['page'] : round((1 + $offset) / $results_per_page);
   $query_processor->solrStart = $offset; //$page * $results_per_page;
   $query_processor->solrLimit = $howmany; //results_per_page;
   $query_processor->solrParams = array(
