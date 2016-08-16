@@ -29,15 +29,13 @@ function upitt_islandora_solr_search_extras_preprocess_islandora_objects_subset(
 }
 
 function upitt_islandora_solr_search_extras_preprocess_islandora_basic_collection_grid(&$variables, $hook) {
-  $islandora_object = $variables['islandora_object'];
-  $form = drupal_get_form('search_in_collection', $islandora_object->id, $islandora_object->label);
-  $variables['collection_search'] = drupal_render($form);
+  $path = drupal_get_path('module', 'upitt_islandora_solr_search_extras');
+  drupal_add_css("$path/css/solr_search_extras.css");
 }
 
 function upitt_islandora_solr_search_extras_preprocess_islandora_basic_collection(&$variables, $hook) {
-  $islandora_object = $variables['islandora_object'];
-  $form = drupal_get_form('search_in_collection', $islandora_object->id, $islandora_object->label);
-  $variables['collection_search'] = drupal_render($form);
+  $path = drupal_get_path('module', 'upitt_islandora_solr_search_extras');
+  drupal_add_css("$path/css/solr_search_extras.css");
   $variables['pager'] = '';
 }
 
@@ -67,8 +65,8 @@ function upitt_islandora_solr_search_extras_preprocess_islandora_objects_grid(&$
   $variables['view_links'] = array();
   $variables['whamjack_sidebar'] = ($show_sidebar) ? _get_solr_sidebar_blocks() : '';
   _get_solr_results($islandora_object, $variables);
-//  $form = drupal_get_form('search_in_collection', $islandora_object->id, $islandora_object->label);
-//  $variables['collection_search'] = drupal_render($form);
+  $path = drupal_get_path('module', 'upitt_islandora_solr_search_extras');
+  drupal_add_css("$path/css/solr_search_extras.css");
 }
 
 function upitt_islandora_solr_search_extras_preprocess_islandora_objects_list(&$variables) {
@@ -76,8 +74,8 @@ function upitt_islandora_solr_search_extras_preprocess_islandora_objects_list(&$
   $variables['view_links'] = array();
   $variables['whamjack_sidebar'] = _get_solr_sidebar_blocks();
   _get_solr_results($islandora_object, $variables);
-  $form = drupal_get_form('search_in_collection', $islandora_object->id, $islandora_object->label);
-  $variables['collection_search'] = drupal_render($form);
+  $path = drupal_get_path('module', 'upitt_islandora_solr_search_extras');
+  drupal_add_css("$path/css/solr_search_extras.css");
 }
 
 /**

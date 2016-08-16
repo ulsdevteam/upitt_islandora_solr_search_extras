@@ -574,45 +574,6 @@ function _get_solr_search_fields() {
   return $fields;
 }
 
-function upitt_islandora_solr_search_extras_form_alter(&$form, $form_state, $form_id) {
-  if($form_id == 'search_in_collection' && isset($form['islandora_object_id']) && $form['islandora_object_id']['#value'] <> '') {
-    $form['#action'] = '/islandora/object/' . $form['islandora_object_id']['#value'] . '/searching_collection' ;
-  }
-}
-
-function search_in_collection(array $form, array &$form_state, $id, $objLabel) {
-  $path = drupal_get_path('module', 'upitt_islandora_solr_search_extras');
-  drupal_add_css("$path/css/solr_search_extras.css");
-  $form = array(
-    'options' => array(
-      '#type' => 'fieldset',
-      '#title' => t('Search within "' . $objLabel . '"'),
-      '#attributes' => array('class' => array('container-inline')),
-      'searchterm' => array(
-        '#type' => 'textfield',
-        '#value' => '',
-        '#defaultvalue' => '',
-        '#size' => 40,
-      ),
-      'field' => array(
-        '#title' => t('Field'),
-        '#type' => 'select',
-        '#default_value' => isset($form_state['values']['field']) ? $form_state['values']['field'] : 'dc.title',
-        '#options' => islandora_solr_get_fields('search_fields'),
-      ),
-    ),
-    'islandora_object_id' => array(
-      '#type' => 'hidden',
-      '#value' => $id,
-    ),
-    'submit' => array(
-      '#type' => 'submit',
-      '#value' => t('Search within Collection'),
-    ),
-  );
-  return $form;
-}
-
 // solr search sessions handling
 /**
  * Implements hook_preprocess_theme().
