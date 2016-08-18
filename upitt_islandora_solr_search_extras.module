@@ -582,28 +582,31 @@ function _get_solr_search_fields() {
  */
 function upitt_islandora_solr_search_extras_preprocess_page(&$vars) {
   $item = menu_get_item();
+  $path = drupal_get_path('module', 'upitt_islandora_solr_search_extras');
   if (is_array($item)) {
     if (($item['map'][0] == 'user') || ($item['path'] == 'islandora/object/%/from_search/%') || 
-      ($item['path'] == 'islandora/object/%') || ($item['path'] == 'islandora/object/%/datastream/%/htmledit') ||
+      ($item['path'] == 'islandora/object/%/datastream/%/htmledit') ||
       ($item['path'] == 'islandora/object/%/viewer')) {
       // remove sidebar for /user page in case it is there
       $vars['page']['sidebar'] = array();
     }
     if ($item['path'] == 'islandora/search' || $item['path'] == 'islandora/search/%') {
-      $path = drupal_get_path('module', 'upitt_islandora_solr_search_extras');
       drupal_add_css("$path/css/solr_search_extras.css");
     }
   }
   // if the second menu path is an islandora_object then get the links for Previous, Next, and Restun to Solr Search
   $islandora_object = menu_get_object('islandora_object', 2);
-  if (($islandora_object) && ($item['path'] == 'islandora/object/%/from_search/%')) {
-//    if (isset($_SERVER['HTTP_REFERER']) && (strstr($_SERVER['HTTP_REFERER'], '/from_search/') <> '')) {
-      $vars['solr_search_links'] = _gen_solr_search_links($islandora_object->id);
-//    }
-    if (function_exists('islandora_retrieve_metadata_markup')) {
-      $vars['collection_metadata'] = islandora_retrieve_metadata_markup($islandora_object);
-    }
+  if (($islandora_object) && ($item['path'] == 'islandora/object/%/from_search/%' || $vars['collection_metadata'] == '')) {
+    $vars['solr_search_links'] = _gen_solr_search_links($islandora_object->id);
+    $vars['collection_metadata'] = (function_exists('islandora_retrieve_metadata_markup')) ? islandora_retrieve_metadata_markup($islandora_object) : '';
   }
+  // remove sidebar - except when object is collectionCModel
+  if (array_search('islandora:collectionCModel', $islandora_object->models) === FALSE && ($item['path'] == 'islandora/object/%')) {
+    $vars['page']['sidebar'] = array();
+  }
+  elseif (!(array_search('islandora:collectionCModel', $islandora_object->models) === FALSE)) {
+    drupal_add_js("$path/js/solr_extras.js");
+  } 
 }
 
 /**

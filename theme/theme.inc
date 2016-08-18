@@ -63,7 +63,7 @@ function upitt_islandora_solr_search_extras_preprocess_islandora_objects_grid(&$
     }
   }
   $variables['view_links'] = array();
-  $variables['whamjack_sidebar'] = ($show_sidebar) ? _get_solr_sidebar_blocks() : '';
+  $variables['whamjack_sidebar'] = ''; // ($show_sidebar) ? _get_solr_sidebar_blocks() : '';
   _get_solr_results($islandora_object, $variables);
   $path = drupal_get_path('module', 'upitt_islandora_solr_search_extras');
   drupal_add_css("$path/css/solr_search_extras.css");
@@ -98,13 +98,33 @@ function _get_solr_results($islandora_object, &$variables) {
 function _get_solr_sidebar_blocks() {
   $sort_block = module_invoke('islandora_solr', 'block_view', 'sort');
   $facets_block = module_invoke('islandora_solr', 'block_view', 'basic_facets');
+  $search_block = module_invoke('islandora_solr', 'block_view', 'advanced');
+  // For some reason, the result of this block call is a different structure.
+  $search_block['subject'] = 'Search';
+  // Also, need to limit the terms and set the search value.
+  $replace_terms = array();
+  foreach ($search_block['content']['terms'] as $index => $search_term) {
+    if (isset($search_term['field']['#value']) && $search_term['field']['#value'] == 'RELS_EXT_isMemberOfCollection_uri_ms') {
+      // need to lookup the label of the current page's collection.
+      $islandora_object = menu_get_object('islandora_object', 2);
+      $search_term['search']['#value'] = isset($islandora_object) ? $islandora_object->label : '';
+      if (isset($search_term['boolean'])) {
+        unset($search_term['boolean']);
+      }
+      $replace_terms[] = $search_term;
+    } 
+  }
+  $search_block['content']['terms'] = $replace_terms;
+  $search_block['content'] = drupal_render($search_block); 
+
   return '
 <div id="sidebar">
  <!-- div class="widget" -->
   <!-- div class="region region-sidebar" -->
         <div class="region region-sidebar">' .
-_my_theme_solr_block($sort_block, 'upitt_islandora_solr_search_extras', 'sort') .
-    _my_theme_solr_block($facets_block, 'upitt_islandora_solr_search_extras', 'basic_facets') . '
+_my_theme_solr_block($search_block, 'upitt_islandora_solr_search_extras', 'advanced') . 
+_my_theme_solr_block($sort_block, 'upitt_islandora_solr_search_extras', 'sort') . '
+' . _my_theme_solr_block($facets_block, 'upitt_islandora_solr_search_extras', 'basic_facets') . '
         </div>
   <!-- /div -->
  <!--/div -->

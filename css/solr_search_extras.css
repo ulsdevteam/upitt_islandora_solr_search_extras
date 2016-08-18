@@ -1,6 +1,11 @@
-.islandora-basic-collection #sidebar, #two-col-left-main #sidebar {
+.islandora-basic-collection #sidebar, #two-col-right-main #sidebar {
   width: 253px !important;
   float: left !important;
+}
+
+#two-col-left-main .islandora-basic-collection {
+  width: 76%;
+  float: left;
 }
 
 #sidebar .region-sidebar {
@@ -43,7 +48,7 @@
   width: 828px;
 }
 
-#block-islandora-solr-basic-facets, #block-islandora-solr-sort {
+#block-islandora-solr-basic-facets, #block-islandora-solr-sort, #block-islandora-solr-advanced {
   width: 88% !important;
 }
 
