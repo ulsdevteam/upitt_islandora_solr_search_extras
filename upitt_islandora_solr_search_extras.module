@@ -126,6 +126,14 @@ function upitt_islandora_solr_search_extras_theme() {
 
 function upitt_islandora_solr_search_extras_search_specific($form, &$form_state, AbstractObject $object) {
   // The searchterms is a POST value
+  $item = menu_get_item();
+  if (is_array($item)) {
+    if (count($item['map']) > 4 && $item['map'][3] == 'searching_collection') {
+      $q = $item['map'][4];
+      dpm($q);
+    }
+  }  
+
   $search_term = isset($_POST['searchterm']) ? $_POST['searchterm'] : '';
   $search_field = isset($_POST['field']) ? $_POST['field'] : '';
   if ($search_term) {
@@ -160,7 +168,7 @@ function upitt_islandora_solr_search_extras_search_specific($form, &$form_state,
   }
   $options = array('query' => array('type' => 'dismax',
       'f' => array($solr_query)));
-  drupal_goto('islandora/search', $options);
+//  drupal_goto('islandora/search', $options);
 }
 
 /**

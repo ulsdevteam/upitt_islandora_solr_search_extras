@@ -1,10 +1,18 @@
+.islandora-basic-collection .islandora-solr-content {
+  width: 99% !important;
+}
+
+.islandora-solr-search-result {
+  width: 100% !important;
+}
+
 .islandora-basic-collection #sidebar, #two-col-right-main #sidebar {
-  width: 253px !important;
+  width: 25% !important;
   float: left !important;
 }
 
 #two-col-left-main .islandora-basic-collection {
-  width: 76%;
+  width: 70%;
   float: left;
 }
 
