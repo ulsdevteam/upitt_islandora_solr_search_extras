@@ -192,7 +192,9 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
   $elements['solr_total'] = $solr_results['response']['numFound'];
   $elements['solr_start'] = $solr_results['response']['start'];
   foreach ($object_results as $k=>$solr_result_object) {
-    $object_results[$k]['solr_doc']['dc.title']['value'] = _inject_skey_to_markup($object_results[$k]['solr_doc']['dc.title']['value'], $object_results[$k]['PID'], $skey);
+    if (isset($object_results[$k]['solr_doc']['dc.title']) && isset($object_results[$k]['solr_doc']['dc.title']['value'])) {
+      $object_results[$k]['solr_doc']['dc.title']['value'] = _inject_skey_to_markup($object_results[$k]['solr_doc']['dc.title']['value'], $object_results[$k]['PID'], $skey);
+    }
     $object_results[$k]['object_url'] = _inject_skey($object_results[$k]['object_url'], $object_results[$k]['PID'], $skey);
     if ((isset($object_results[$k]['datastreams']))) {
       $object_results[$k]['page_solr_doc'] = array();
@@ -482,7 +484,13 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
  */
 function _islandora_solr_pid_parent_search($child_object, $solr_fields, $options, $skey, $lookup_pid = '') {
   $child_pid = ($lookup_pid) ? $lookup_pid : $child_object['PID'];
-  $solr_fields_csv = implode(",", array_keys($solr_fields));
+
+  // PID must be in the search
+  if (array_search('PID', $solr_fields) === FALSE) {
+    $solr_fields['PID'] = array('label' => 'PID', 'class' => 'PID');
+  }
+  $solr_fields_keys = array_keys($solr_fields);
+  $solr_fields_csv = implode(",", $solr_fields_keys);
   $_islandora_solr_queryclass = new IslandoraSolrQueryProcessor();
   $islandora_object = islandora_object_load($child_pid);
   $parent = $islandora_object->getParents();
@@ -596,7 +604,7 @@ function upitt_islandora_solr_search_extras_preprocess_page(&$vars) {
   }
   // if the second menu path is an islandora_object then get the links for Previous, Next, and Restun to Solr Search
   $islandora_object = menu_get_object('islandora_object', 2);
-  if (($islandora_object) && ($item['path'] == 'islandora/object/%/from_search/%' || $vars['collection_metadata'] == '')) {
+  if (($islandora_object) && ($item['path'] == 'islandora/object/%/from_search/%' || !isset($vars['collection_metadata']))) {
     $vars['solr_search_links'] = _gen_solr_search_links($islandora_object->id);
     $vars['collection_metadata'] = (function_exists('islandora_retrieve_metadata_markup')) ? islandora_retrieve_metadata_markup($islandora_object) : '';
   }
