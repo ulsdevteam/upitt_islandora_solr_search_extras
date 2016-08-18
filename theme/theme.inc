@@ -101,6 +101,7 @@ function _get_solr_sidebar_blocks() {
   $search_block = module_invoke('islandora_solr', 'block_view', 'advanced');
   // For some reason, the result of this block call is a different structure.
   $search_block['subject'] = 'Search';
+/*
   // Also, need to limit the terms and set the search value.
   $replace_terms = array();
   foreach ($search_block['content']['terms'] as $index => $search_term) {
@@ -113,8 +114,9 @@ function _get_solr_sidebar_blocks() {
       }
       $replace_terms[] = $search_term;
     } 
-  }
+  } 
   $search_block['content']['terms'] = $replace_terms;
+*/
   $search_block['content'] = drupal_render($search_block); 
 
   return '

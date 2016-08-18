@@ -600,13 +600,16 @@ function upitt_islandora_solr_search_extras_preprocess_page(&$vars) {
     $vars['solr_search_links'] = _gen_solr_search_links($islandora_object->id);
     $vars['collection_metadata'] = (function_exists('islandora_retrieve_metadata_markup')) ? islandora_retrieve_metadata_markup($islandora_object) : '';
   }
-  // remove sidebar - except when object is collectionCModel
-  if (array_search('islandora:collectionCModel', $islandora_object->models) === FALSE && ($item['path'] == 'islandora/object/%')) {
-    $vars['page']['sidebar'] = array();
+  if ($islandora_object) {
+    // remove sidebar - except when object is collectionCModel
+    if (array_search('islandora:collectionCModel', $islandora_object->models) === FALSE && ($item['path'] == 'islandora/object/%')) {
+      $vars['page']['sidebar'] = array();
+      $vars['page']['islandora_object_sidebar'] = array();
+    }
+    elseif (!(array_search('islandora:collectionCModel', $islandora_object->models) === FALSE)) {
+      drupal_add_js("$path/js/solr_extras.js");
+    }
   }
-  elseif (!(array_search('islandora:collectionCModel', $islandora_object->models) === FALSE)) {
-    drupal_add_js("$path/js/solr_extras.js");
-  } 
 }
 
 /**
