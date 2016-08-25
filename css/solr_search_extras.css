@@ -54,6 +54,7 @@
 .solr-label {
   display: inline-block;
   min-width: 19%;
+  width: 19%;
   padding-right: 10px;
   color: #777;
   font-size: smaller;
