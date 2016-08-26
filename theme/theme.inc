@@ -124,9 +124,9 @@ function _get_solr_sidebar_blocks() {
  <!-- div class="widget" -->
   <!-- div class="region region-sidebar" -->
         <div class="region region-sidebar">' .
-_my_theme_solr_block($search_block, 'upitt_islandora_solr_search_extras', 'advanced') . 
-_my_theme_solr_block($sort_block, 'upitt_islandora_solr_search_extras', 'sort') . '
-' . _my_theme_solr_block($facets_block, 'upitt_islandora_solr_search_extras', 'basic_facets') . '
+_my_theme_solr_block($search_block, 'upitt_islandora_solr_search_extras', 'advanced', 'Search') . 
+_my_theme_solr_block($sort_block, 'upitt_islandora_solr_search_extras', 'sort', 'Sort') . '
+' . _my_theme_solr_block($facets_block, 'upitt_islandora_solr_search_extras', 'basic_facets', 'Filter Results') . '
         </div>
   <!-- /div -->
  <!--/div -->
@@ -134,14 +134,14 @@ _my_theme_solr_block($sort_block, 'upitt_islandora_solr_search_extras', 'sort') 
 ';
 }
 
-function _my_theme_solr_block($block, $block_module, $block_delta) {
+function _my_theme_solr_block($block, $block_module, $block_delta, $block_subject) {
   return '
 <div id="' . drupal_html_id('block-islandora-solr-' . $block_delta) . '" class="block block-islandora-solr">
-' . (isset($block['subject']) ? '
-  <h2>' . $block['subject'] . '</h2>' : '') .
+  <h2>' . $block_subject . '</h2>' .
 '  <div class="content">
     ' . $block['content'] .
 '  </div>
 </div> 
 ';
 }
+

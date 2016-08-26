@@ -13,7 +13,7 @@
      });
 */
 
-
+/*
      // Remove the supplemental search term blocks and the "remove" button for the first search term.
      $('#edit-terms-0-remove').remove();
      while ($('#islandora-solr-advanced-terms > div').length > 1) {
@@ -24,7 +24,9 @@
 
      // Empty the search box
      $('#edit-terms-0-search').val('');
-
+*/
+     // Remove those individual + / - facet links
+     $('.islandora-solr-facet li .plusminus').remove();
 
    });
 })(jQuery);
