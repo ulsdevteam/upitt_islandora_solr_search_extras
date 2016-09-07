@@ -10,7 +10,7 @@ define('UPITT_ISLANDORA_SOLR_SEARCH_EXTRAS_MANAGE', 'manage upitt solr search');
 
 // constant
 define('CST_ISLANDORA_PATH', drupal_get_path('module', 'islandora'));
-define('CST_SESSION_LIFETIME', 60 * 10);
+define('CST_SESSION_LIFETIME', 60 * 30);  // 30 minutes
 
 /**
  * Implements hook_menu().
@@ -37,7 +37,18 @@ function upitt_islandora_solr_search_extras_menu() {
     ),
     // handler for search in collection using the islandora_solr code
     'islandora/search_collection/%islandora_object' => array(
-      'title' => 'Search within Collection',
+      'title arguments' => array(2),
+      'title callback' => 'upitt_islandora_solr_search_extras_lookup_title',
+      'description' => 'Search the models within this Collection.',
+      'page callback' => 'upitt_islandora_solr_search_extras_search_specific',
+      'page arguments' => array(2),
+      'type' => MENU_NORMAL_ITEM,
+      'access callback' => 'islandora_object_access_callback',
+      'access arguments' => array(ISLANDORA_VIEW_OBJECTS, 2),
+    ),
+    'islandora/search_collection/%islandora_object/%' => array(
+      'title arguments' => array(2),
+      'title callback' => 'upitt_islandora_solr_search_extras_lookup_title',
       'description' => 'Search the models within this Collection.',
       'page callback' => 'upitt_islandora_solr_search_extras_search_specific',
       'page arguments' => array(2),
@@ -47,6 +58,51 @@ function upitt_islandora_solr_search_extras_menu() {
     ),
   );
   return $items;
+}
+
+function upitt_islandora_solr_search_extras_search_specific(AbstractObject $islandora_object) {
+  $solr_query = format_string('!field:!value', array(
+              '!field' => 'RELS_EXT_isMemberOfCollection_uri_ms',
+              '!value' => Apache_Solr_Service::escape('info:fedora/' . $islandora_object),
+      ));
+  return islandora_solr($solr_query);  
+}
+
+// This will redirect old /islandora/object/{PID} urls for collections to valid collection alias urls if they exist.
+// This also must prevent a redirect-loop from happening by inspecting the actual URL for this object.
+function handle_islandora_view_object($islandora_object) {
+  $url = $_SERVER['REQUEST_URI'];
+  // Is a valid path for redirection, and is a collection...
+  if (strstr($url, '/islandora/object/') && _is_collection($islandora_object)) {
+    // Look up the alias record that matches the PID
+    $raw_source = urldecode(str_replace('/islandora/object/', 'islandora/search_collection/', $url));
+    @list($source, $params) = explode('/search_collection/?', $raw_source);
+    $params_arr = explode('&', $params);
+    $query_params = array();
+    foreach ($params_arr as $k => $paramPair) {
+      if (trim($paramPair) <> '') {
+        $equal_pos = strpos($paramPair, '=');
+        $param = substr($paramPair, 0, $equal_pos);
+        $value = substr($paramPair, $equal_pos + 1);
+        $query_params[$param] = $value;
+      }
+    }
+
+    $result = db_query('SELECT `alias` FROM {url_alias} WHERE `source` = :source', array(':source' => $source));
+    if ($record = $result->fetchAssoc()) {
+      if ($record['alias']) {
+        drupal_goto($record['alias'], ((count($query_params)) ? array('query'=>$query_params) : array()));
+        exit;
+      }
+    }
+  }
+}
+
+// Title callback function for 'islandora/search_collection/%islandora_object/%' menu routes.
+function upitt_islandora_solr_search_extras_lookup_title($islandora_object) {
+  if (_is_collection($islandora_object)) {
+    return $islandora_object->label;
+  }
 }
 
 /**
@@ -116,6 +172,15 @@ function upitt_islandora_solr_search_extras_theme() {
         'pids' => array(),
       ),
     ),
+    'islandora_solr_wrapper' => array(
+      'file' => 'theme/theme.inc',
+      'template' => 'theme/islandora-solr-wrapper',
+      'variables' => array(
+        'results' => NULL,
+        'secondary_profiles' => NULL,
+        'elements' => array(),
+      ),
+    ),
     // solr search sessions handling
     'islandora_default' => array(
       'file' => 'theme/theme.inc',
@@ -123,14 +188,6 @@ function upitt_islandora_solr_search_extras_theme() {
       'variables' => array('islandora_object' => NULL),
     ),
   );
-}
-
-function upitt_islandora_solr_search_extras_search_specific(AbstractObject $object) {
-  $solr_query = format_string('!field:!value', array(
-              '!field' => 'RELS_EXT_isMemberOfCollection_uri_ms',
-              '!value' => Apache_Solr_Service::escape('info:fedora/' . $object),
-      ));
-  return islandora_solr($solr_query);
 }
 
 /**
@@ -152,8 +209,9 @@ function upitt_islandora_solr_search_extras_search_specific(AbstractObject $obje
 function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_results) {
   // The skey value will need to be written into the links for pages as handled by
   // /islandora/object/%islandora_object/from_search/% menu route above.
+  module_load_include('inc', 'islandora_solr_search', 'includes/utilities');
   $skey = _get_skey($solr_results);
-  $solr_fields = _get_solr_search_fields();
+  $solr_fields = _get_solr_setttings_fields();
   $tmp_title = '';
   $solr_results = islandora_solr_prepare_solr_results($solr_results);
   $object_results = $solr_results['response']['objects'];
@@ -163,9 +221,9 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
   $elements['solr_start'] = $solr_results['response']['start'];
   foreach ($object_results as $k=>$solr_result_object) {
     if (isset($object_results[$k]['solr_doc']['dc.title']) && isset($object_results[$k]['solr_doc']['dc.title']['value'])) {
-      $object_results[$k]['solr_doc']['dc.title']['value'] = _inject_skey_to_markup($object_results[$k]['solr_doc']['dc.title']['value'], $object_results[$k]['PID'], $skey);
+      $object_results[$k]['solr_doc']['dc.title']['value'] = _inject_skey_to_markup($object_results[$k]['solr_doc']['dc.title']['value'], $object_results[$k]['PID'], $skey . '-' . ($elements['solr_start'] + $k));
     }
-    $object_results[$k]['object_url'] = _inject_skey($object_results[$k]['object_url'], $object_results[$k]['PID'], $skey);
+    $object_results[$k]['object_url'] = _inject_skey($object_results[$k]['object_url'], $object_results[$k]['PID'], $skey . '-' . ($elements['solr_start'] + $k));
     if ((isset($object_results[$k]['datastreams']))) {
       $object_results[$k]['page_solr_doc'] = array();
       $object_results[$k]['thumbnail'] = $object_results[$k]['page_thumbnail'] = '';
@@ -225,12 +283,12 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
                 'attributes' => array(),
                 'width' => '60px',
               ));
-              $object_results[$k]['page_thumbnail'] = l($page_image, _inject_skey($page['object_url'], '', $skey), $options);
+              $object_results[$k]['page_thumbnail'] = l($page_image, _inject_skey($page['object_url'], '', $skey . '-' . ($elements['solr_start'] + $k)), $options);
             }
     */
             if ($tmp_title) {
               $object_results[$k]['solr_doc']['dc.title']['value'] = $tmp_title .
-                ' in ' . l($solr_doc['solr_doc']['dc.title']['value'], _inject_skey($solr_doc['object_url'], $solr_doc['PID'], $skey));
+                ' in ' . l($solr_doc['solr_doc']['dc.title']['value'], _inject_skey($solr_doc['object_url'], $solr_doc['PID'], $skey . '-' . ($elements['solr_start'] + $k)));
             }
           }
         }
@@ -262,12 +320,14 @@ function _get_skey($solr_results) {
     return '';
   }
   $skey = NULL;
+  $results_per_page = variable_get('islandora_solr_num_of_results', 20);
   // The skey could come from refer_url if user clicked Return to Search Results.
   if (isset($_SERVER['HTTP_REFERER']) && (strstr($_SERVER['HTTP_REFERER'], '/from_search/') <> '')) {
     $parts = explode("/", $_SERVER['HTTP_REFERER']);
     // parts 0=http, 1= 2=[domain] 3=islandora 4=objec 5={PID} 6=from_search 7={skey}
     if ($parts[6] == 'from_search') {
-      $skey = $parts[7];
+      @list($skey, $offset) = explode('-', $parts[7]);
+      _save_solr_search_session($skey, NULL, $solr_url, $offset, $results_per_page);
     }
   }
   if (!$skey) {
@@ -283,7 +343,7 @@ function _get_skey($solr_results) {
       }
     }
     if (isset($_GET['q']) && strstr($_GET['q'], '/search_collection/')) {
-      $pid = _clean_pid($_GET['q']);
+      $pid = _collection_pid($_GET['q'], $skey);
       $collection_object = islandora_object_load($pid);
       $q = 'RELS_EXT_isMemberOfCollection_uri_ms:*' . islandora_solr_lesser_escape($pid);
       $solr_filters[] = 'f[' . $indexer . ']=' . $q;
@@ -296,15 +356,14 @@ function _get_skey($solr_results) {
 //###        $solr_filters[] = 'qf=' . $request_uri;
       }
     }
-    $solr_url = ($collection_object) ? '/' . _format_collection_url($collection_object->label) : '/islandora/search/?islandora_solr_search_navigation=0&' . implode('&', $solr_filters);
+    $solr_url = (($collection_object) ? _format_collection_url($collection_object->label, TRUE) . '/' : '/islandora/search/') . '?islandora_solr_search_navigation=0&' . implode('&', $solr_filters);
     $skey = db_query('SELECT s.skey FROM {solr_search_sessions} s JOIN {solr_search_skey_results} r ON (r.skey = s.skey) WHERE s.solr_search_url = :u', array(':u' => $solr_url))->fetchField();
-    $results_per_page = variable_get('islandora_solr_num_of_results', 20);
     if (!$skey) {
       $skey = md5(date('c'));
-      _save_solr_search_session($skey, $solr_results, '', 0, 40); //$results_per_page);
+      _save_solr_search_session($skey, $solr_results, '', 0, $results_per_page);
     } else {
       $offset = (isset($_GET['page'])) ? $_GET['page'] * $results_per_page : 0;
-      _save_solr_search_session($skey, NULL, $solr_url, $offset, 40); //$results_per_page);
+      _save_solr_search_session($skey, NULL, $solr_url, $offset, $results_per_page);
     }
   }
   $lastmod = time();
@@ -313,10 +372,10 @@ function _get_skey($solr_results) {
   return $skey;
 }
 
-function _format_collection_url($fedora_label) {
+function _format_collection_url($fedora_label, $alias = FALSE) {
   $strip_chars = array('.', ',', '/', '\'', '"');
   $strip_words = array(' and ', ' the ', ' to ');
-  return ($fedora_label) ? '/search_collection/' . str_replace($strip_chars, '', urldecode(str_replace("+", "-", urlencode(str_replace($strip_words, " ", strtolower(trim($fedora_label))))))) : '';
+  return ($fedora_label) ? (($alias) ? 'collection/' : '/search_collection/') . str_replace($strip_chars, '', urldecode(str_replace("+", "-", urlencode(str_replace($strip_words, " ", strtolower(trim($fedora_label))))))) : '';
 }
 
 function _inject_skey_to_markup($markup, $PID, $skey) {
@@ -360,19 +419,20 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
   $qf = '';
   // See if this is a collection page
   $collection_pid = (isset($_GET['q']) && strstr('islandora/search_collection/', $_GET['q'])) ? str_replace('islandora/search_collection/', '', $_GET['q']): NULL;
-
   if ($solr_url) {
-    if (strstr('search/collection', $solr_url)) {
-      // werwer Get query parameters that match the collection label here
-      error_log('werewrw' . print_r($_GET, true));
+    if (substr($solr_url, 0, 11) == 'collection/') {
+      $q = 'RELS_EXT_isMemberOfCollection_uri_ms:*' . str_replace(':', '\\:', (isset($_GET['q']) && strstr($_GET['q'], 'islandora/search_collection/')) ? 
+        str_replace('islandora/search_collection/', '', $_GET['q']) : 
+        _collection_pid($_GET['q'], $skey));
     }
     else {
-      $tmp = str_replace("/islandora/search/?islandora_solr_search_navigation=0&", "", $solr_url);
+      // Hack - replace the encoded ampersand "&amp;" as "?amp;" until it is split
+      $tmp = str_replace("/islandora/search/?islandora_solr_search_navigation=0&", "", str_replace("&amp;", "?amp;", $solr_url));
       $filters = explode("&", $tmp);
       foreach ($filters as $filter) {
         @list($keyname, $param) = explode("=", $filter);
         if ($keyname <> 'qf') {
-          $q_arr[] = $param;
+          $q_arr[] = str_replace("?amp;", "&amp;", $param);
         }
         else {
 //###          $qf = $param;
@@ -398,11 +458,13 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
     if ($request_uri && $request_uri <> '/islandora/search') {
       // This value could contain a collection search /collection/{PID}, so restructure of $request_uri is needed.
       if (isset($_GET['q']) && strstr($_GET['q'], '/search_collection/')) {
-        $pid = _clean_pid($_GET['q']);
+        $pid = _collection_pid($_GET['q'], $skey);
         $collection_object = islandora_object_load($pid);
-        $q = 'RELS_EXT_isMemberOfCollection_uri_ms:*' . islandora_solr_lesser_escape($pid);
-        $solr_filters[] = 'f[' . $filter_index . ']=' . $q;
-        $q_arr[] = $q;
+        if (is_object($collection_object)) {
+          $q = 'RELS_EXT_isMemberOfCollection_uri_ms:*' . islandora_solr_lesser_escape($pid);
+          $solr_filters[] = 'f[' . $filter_index . ']=' . $q;
+          $q_arr[] = $q;
+        }
       } else {
         $collection_object = NULL;
         if (strstr($request_uri, ':')) {
@@ -410,14 +472,13 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
           $q_arr[] = $request_uri;
         }
         else {
-//###          $solr_filters[] = 'qf=' . variable_get('islandora_solr_query_fields', 'dc.title^5 dc.subject^2 dc.description^2 dc.creator^2 dc.contributor^1 dc.type'); // $request_uri;
-
-// $solr_filters[] = 
-//          $q_arr[] = $request_uri . '?type=dismax';
+          //###          $solr_filters[] = 'qf=' . variable_get('islandora_solr_query_fields', 'dc.title^5 dc.subject^2 dc.description^2 dc.creator^2 dc.contributor^1 dc.type'); // $request_uri;
+          //          $q_arr[] = $request_uri . '?type=dismax';
         }
       }
     }
-    $solr_url = ($collection_object) ? '/' . _format_collection_url($collection_object->label) : '/islandora/search/?islandora_solr_search_navigation=0&' . implode('&', $solr_filters);
+
+    $solr_url = (($collection_object) ? _format_collection_url($collection_object->label, TRUE) . '/' : '/islandora/search/') . '?islandora_solr_search_navigation=0&' . implode('&', $solr_filters);
     $q = ((count($q_arr) > 0) ? '(' : '') . implode(') AND (', $q_arr) . ((count($q_arr) > 0) ? ')' : '');
   }
   $solr_base_filter = trim(variable_get('islandora_solr_base_filter'));
@@ -475,8 +536,8 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
       $this_offset = $offset;
       foreach ($results as $result) {
         @list($result_pid, $result_title) = explode("|", $result);
-        db_query('DELETE FROM {solr_search_skey_results} WHERE skey = :skey AND PID = :PID AND offset = :offset', 
-          array(':skey' => $skey, ':PID' => $result_pid, ':offset' => $this_offset));
+        db_query('DELETE FROM {solr_search_skey_results} WHERE skey = :skey AND offset = :offset', 
+          array(':skey' => $skey, ':offset' => $this_offset));
         db_insert('solr_search_skey_results')->fields(array(
           'skey' => $skey,
           'PID' => $result_pid,
@@ -505,7 +566,7 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
 function _get_solr_field_value_special($islandora_object, $field, $single_result = TRUE) {
   $value = NULL;
   $query_processor = new IslandoraSolrQueryProcessor();
-  $query_processor->solrQuery = 'PID:' . islandora_solr_lesser_escape(_clean_pid($islandora_object->id));
+  $query_processor->solrQuery = 'PID:' . islandora_solr_lesser_escape(_collection_pid($islandora_object->id, ''));
   $query_processor->solrStart = 0;
   $query_processor->solrLimit = 1;
   $query_processor->solrParams = array(
@@ -526,8 +587,9 @@ function _get_solr_field_value_special($islandora_object, $field, $single_result
 function _islandora_solr_pid_parent_search($child_object, $solr_fields, $options, $skey, $lookup_pid = '') {
   $child_pid = ($lookup_pid) ? $lookup_pid : $child_object['PID'];
 
+  $solr_fields_had_PID = !(array_search('PID', $solr_fields) === FALSE);
   // PID must be in the search
-  if (array_search('PID', $solr_fields) === FALSE) {
+  if (!$solr_fields_had_PID) {
     $solr_fields['PID'] = array('label' => 'PID', 'class' => 'PID');
   }
   $solr_fields_keys = array_keys($solr_fields);
@@ -542,7 +604,7 @@ function _islandora_solr_pid_parent_search($child_object, $solr_fields, $options
   }
   $parent = array_merge($parent, $page_parent_ids);
   // Get the first value if there happens to be more than one Parent.
-  $pid = _clean_pid(array_pop($parent));
+  $pid = _collection_pid(array_pop($parent), $skey);
   if ($pid) {
     // Build and execute Apache Solr query.
     module_load_include('inc', 'islandora_solr', 'includes/utilities');
@@ -589,6 +651,10 @@ function _islandora_solr_pid_parent_search($child_object, $solr_fields, $options
       if (isset($results['dc.title']['value']) && $child_object) {
         $results['dc.title']['value'] = l($results['dc.title']['value'], $child_object['object_url'], $options);
       }
+      // Remove the PID field if it was added for the query to run valid.
+      if (!$solr_fields_had_PID) {
+        unset($results['PID']);
+      }
       return $results;
     }
     catch (Exception $e) {
@@ -612,17 +678,6 @@ function upitt_islandora_solr_search_extras_permission() {
   );
 }
 
-function _get_solr_search_fields() {
-  $results = db_query("SELECT `solr_field`, `solr_field_settings` FROM islandora_solr_fields WHERE field_type = 'result_fields' ORDER BY `weight`");
-  $fields = array();
-  foreach ($results as $row) {
-    $settings = unserialize($row->solr_field_settings);
-    $fields[$row->solr_field] = array('label' => $settings['label'],
-                                      'class' => $row->solr_field);
-  }
-  return $fields;
-}
-
 // solr search sessions handling
 /**
  * Implements hook_preprocess_theme().
@@ -631,11 +686,8 @@ function _get_solr_search_fields() {
  */
 function upitt_islandora_solr_search_extras_preprocess_page(&$vars) {
   module_load_include('inc', 'islandora', 'includes/metadata');
+  $is_first_page = !(isset($_GET['page']));
   $item = menu_get_item();
-/* $vars['tabs'] =  '<h2 class="element-invisible" data-thmr="thmr_132">Primary tabs</h2><ul class="tabs primary" data-thmr="thmr_132" thmr_curr="0" style="outline: none;"><li class="active" data-thmr="thmr_133"><a href="/islandora/object/pitt%3Acollection.68" class="active" data-thmr="thmr_134">Metadata<span class="element-invisible">(active tab)</span></a></li>
-<li data-thmr="thmr_135" style="outline: none;"><a href="/islandora/object/pitt%3Acollection.68/manage" data-thmr="thmr_136">Manage</a></li>
-<li data-thmr="thmr_137" style="outline: none;"><a href="/islandora/object/pitt%3Acollection.68/view_mods_as_marcxml" data-thmr="thmr_138" style="outline: none;">MARCXML</a></li>
-</ul>'; */
   $path = drupal_get_path('module', 'upitt_islandora_solr_search_extras');
   if (is_array($item)) {
     if (($item['map'][0] == 'user') || ($item['path'] == 'islandora/object/%/from_search/%') || 
@@ -651,39 +703,40 @@ function upitt_islandora_solr_search_extras_preprocess_page(&$vars) {
   }
   // if the second menu path is an islandora_object then get the links for Previous, Next, and Restun to Solr Search
   $islandora_object = menu_get_object('islandora_object', 2);
+  $is_collection = _is_collection($islandora_object);
   if (($islandora_object) && ($item['path'] == 'islandora/object/%/from_search/%' || 
     $item['path'] == 'islandora/search_collection/%' ||
     !isset($vars['collection_metadata']))) {
     $vars['solr_search_links'] = _gen_solr_search_links($islandora_object->id);
-    $vars['collection_metadata'] = (function_exists('islandora_retrieve_metadata_markup')) ? islandora_retrieve_metadata_markup($islandora_object) : '';
+//    $vars['collection_metadata'] = (function_exists('islandora_retrieve_metadata_markup')) ? islandora_retrieve_metadata_markup($islandora_object) : '';
   }
   if ($islandora_object) {
+    $upitt_date = _get_solr_field_value_special($islandora_object, 'mods_originInfo_dateOther_ms', true);
+    $vars['title'] = rtrim(rtrim($islandora_object->label, ') '), ')') . (($upitt_date) ? ' (' . $upitt_date . ')' : '');
+
     // remove sidebar - except when object is collectionCModel
-    if (array_search('islandora:collectionCModel', $islandora_object->models) === FALSE && ($item['path'] == 'islandora/object/%')) {
+    if (!$is_collection && ($item['path'] == 'islandora/object/%')) {
       $vars['page']['sidebar'] = array();
       $vars['page']['islandora_object_sidebar'] = array();
     }
-    elseif (!(array_search('islandora:collectionCModel', $islandora_object->models) === FALSE)) {
+    elseif ($is_collection) {
       drupal_add_js("$path/js/solr_extras.js");
-      $vars['collection_metadata'] = (function_exists('islandora_retrieve_metadata_markup')) ? islandora_retrieve_metadata_markup($islandora_object) : '';
-      $vars['title'] = $islandora_object->label;
+      $vars['collection_page_metadata'] = ($is_first_page) ? ((function_exists('islandora_retrieve_metadata_markup')) ? islandora_retrieve_metadata_markup($islandora_object) : '') : '';
       $collection_tn_url = '';
-      if (isset($islandora_object['TN_LARGE'])) {
-        $collection_tn_url = url("islandora/object/{$islandora_object->id}/datastream/TN_LARGE/view");
-      } elseif (isset($islandora_object['TN'])) {
-        $collection_tn_url = url("islandora/object/{$islandora_object->id}/datastream/TN/view");
+      if ($is_first_page) {
+        if (isset($islandora_object['TN_LARGE'])) {
+          $collection_tn_url = url("islandora/object/{$islandora_object->id}/datastream/TN_LARGE/view");
+        } elseif (isset($islandora_object['TN'])) {
+          $collection_tn_url = url("islandora/object/{$islandora_object->id}/datastream/TN/view");
+        }
+        if ($collection_tn_url) { 
+          $params = array(
+            'title' => $islandora_object->label,
+            'alt' => $islandora_object->label,
+            'path' => $collection_tn_url);
+          $vars['collection_tn_img'] = theme('image', $params);
+        }
       }
-      if ($collection_tn_url) { 
-        $params = array(
-          'title' => $islandora_object->label,
-          'alt' => $islandora_object->label,
-          'path' => $collection_tn_url);
-        $variables['collection_img'] = theme('image', $params);
-      }      
-    }
-    // Display the date at the top if not on the viewer landing page because it already displays it.
-    if ($item['path'] == 'islandora/object/%/from_search/%' || $item['path'] == 'islandora/object/%/viewer') {
-      $vars['title_suffix'] = _get_solr_field_value_special($islandora_object, 'mods_originInfo_dateOther_ms', true);
     }
   }
 }
@@ -721,23 +774,24 @@ function _gen_solr_search_links($pid) {
   }
   elseif ($parts[4] == 'from_search') {
     $skey = $parts[5];
+    @list($skey, $this_idx) = explode("-", $skey);
     $pids = $titles = array();
     $solr_search_url = '';
     $numResults = _get_pids_and_titles($skey, $pids, $titles, $solr_search_url);
-    $this_idx = array_search($pid, $pids);
-    if (count($pids) < $numResults && 
-      ($this_idx % variable_get('islandora_solr_num_of_results', 20) == (variable_get('islandora_solr_num_of_results', 20) - 1) )) {
-      // Go get one more results now
+    if (!isset($pids[$this_idx + 1])) {
       _save_solr_search_session($skey, NULL, $solr_search_url, $this_idx, 3);
-      $numResults = _get_pids_and_titles($skey, $pids, $titles, $solr_search_url);
-      $this_idx = array_search($pid, $pids);
     }
+    elseif(!isset($pids[$this_idx - 1])) {
+      $floor = max($this_idx - 3, 0);
+      _save_solr_search_session($skey, NULL, $solr_search_url, $floor, 3);
+    }
+    $numResults = _get_pids_and_titles($skey, $pids, $titles, $solr_search_url);
 
     if (count($pids) > 0) {
       $links = array();
       if ($this_idx > 0 && !($this_idx === FALSE)) {
         $links[] = l('‹ Previous', 
-          _inject_skey('', $pids[$this_idx - 1], $skey),
+          _inject_skey('', $pids[$this_idx - 1], $skey . '-' . ($this_idx - 1)),
           array(
             'attributes' => array(
             'title' => $titles[$this_idx - 1],
@@ -745,11 +799,15 @@ function _gen_solr_search_links($pid) {
           )
         );
       }
-      // The link function messes up the query by reencoding the parts that are already encoded.
-      $links[] = '<a href="' . str_replace('"', '%22', $solr_search_url) . '">Back to Search Results</a>';
+      // The link function messes up the query by reencoding the parts that are already encoded.  Based on the offset, 
+      // the page of this search result can be determined.
+      $results_per_page = variable_get('islandora_solr_num_of_results', 20);
+      $page = intval($this_idx / $results_per_page);
+      $solr_search_url = ($page) ? _inject_page_parameter($solr_search_url, $page) : $solr_search_url;
+      $links[] = '<a href="/' . ltrim(str_replace('"', '%22', $solr_search_url), '/') . '">Back to Search Results</a>';
       if ($this_idx < count($pids) && !($this_idx === FALSE)) {
         $links[] = l('Next ›', 
-          _inject_skey('', $pids[$this_idx + 1], $skey),
+          _inject_skey('', $pids[$this_idx + 1], $skey . '-' . ($this_idx + 1)),
           array(
             'attributes' => array(
             'title' => $titles[$this_idx + 1],
@@ -784,12 +842,61 @@ function upitt_islandora_solr_search_extras__islandora_object_access_callback($p
   return islandora_object_access_callback($perm, $object);
 }
 
-function _clean_pid($pid) {
-  return str_replace(
-      array("islandora/search_collection/", "islandora/object/"),
-      '', $pid);
-//      array("islandora/search_collection/", "islandora/object/", "/", ":"), 
-//      array("", "", "\/", "\:"), $pid);
+/**
+ * Helper function to parse a URL to obtain the PID for an islandora_object.  When the referred PID is not a collection, 
+ * try to derive the collection PID from the related solr_search_sessions' solr_search_url record.
+ */
+function _collection_pid($url, $skey) {
+  // value like "islandora/object/pitt:collection.121/search_collection/catch_all_fields_mt:(white)"
+  $stripped = str_replace(array("islandora/search_collection/", "islandora/object/"), '', $url);
+  @list($stripped, $junk) = explode('/search_collection/', $stripped);
+  @list($pid, $junk) = explode('/from_search', $stripped);
+  // The PID should never be a page or any other object that was looked up based on it not having MODS info -- 
+  // inspect the islandora_object and return the parent collection.
+  $islandora_object = islandora_object_load($pid);
+  // The referred PID is not a collection - need to look up the solr_search_sessions record
+  if ($islandora_object) { // && !isset($islandora_object['MODS'])) {
+    $result = db_query('SELECT u.source FROM {solr_search_sessions} s JOIN {url_alias} u ON u.alias = s.solr_search_url WHERE s.skey = :skey', array(':skey' => $skey));
+    if ($record = $result->fetchAssoc()) {
+      $source_url = $record['source'];
+      $pid = str_replace('islandora/search_collection/', '', $source_url);
+    }
+    elseif (!in_array('islandora:collectionCModel', $islandora_object->models)) {
+      // If the object is part of two collections on the same site, there is no way to return the correct collection at this point - 
+      // returns THE FIRST collection PID from the parent collection objects.
+      $parent = $islandora_object->getParents();
+      $collection = $islandora_object->relationships->get(NULL, 'isMemberOfCollection');
+      $collection_ids = array();
+      foreach ($collection as $page_parent) {
+        $collection_ids[] = $page_parent['object']['value'];
+      }
+      $parent = array_merge($parent, $collection_ids);
+      $pid = array_pop($parent);
+    }
+  }
+
+  return $pid;
 }
 
+/**
+ * Helper function to determine whether or not the $islandora_object is a collection.
+ */
+function _is_collection($islandora_object) { 
+  return (is_object($islandora_object)) ? !(array_search('islandora:collectionCModel', $islandora_object->models) === FALSE) : FALSE;
+}
 
+function _inject_page_parameter($solr_search_url, $page) {
+  if (strstr($solr_search_url, "?")) {
+    return str_replace('?', '?page=' . $page . '&', $solr_search_url);
+  } else {
+    $last_slash_pos = (strstr($solr_search_url, '&')) ? strrpos($solr_search_url, "/") :  // The last position of a "/"
+      strlen($solr_search_url);
+    $remaining_params = substr($solr_search_url, $last_slash_pos);
+    if ($last_slash_pos) {
+      return substr($solr_search_url, 0, $last_slash_pos) . '?page='. $page . (($remaining_params) ? '&' . $remaining_params : '');
+    }
+    else {
+      return $solr_search_url . '?page=' . $page;
+    }
+  } 
+}

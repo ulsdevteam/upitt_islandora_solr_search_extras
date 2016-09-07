@@ -6,6 +6,10 @@
   width: 100% !important;
 }
 
+.fullwidth {
+  width: 100% !important;
+}
+
 .islandora-basic-collection #sidebar, #two-col-right-main #sidebar {
   width: 25% !important;
   float: left !important;

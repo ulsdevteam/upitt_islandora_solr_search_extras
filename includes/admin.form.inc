@@ -99,22 +99,21 @@ function _map_url_alias_for_collection_pages() {
     $update_count = 0;
     foreach ($results as $pid=>$result) {
       $source = 'islandora/search_collection/' . $pid;
-      $alias = _format_collection_url($result);
-      $alias2 = 'islandora/object/' . $pid;
-      // db_query('DELETE FROM {url_alias} WHERE alias = :alias', array(':alias' => $alias));
-      // db_query('REPLACE INTO {url_alias} (`source`, `alias`, `language`) VALUES (:source, :alias, \'und\')',
-      //   array(':source' => $source, ':alias' => $alias));
-      // db_query('REPLACE INTO {url_alias} (`source`, `alias`, `language`) VALUES (:source, :alias, \'und\')',
-      //   array(':source' => $source, ':alias' => $alias2));
+      $alias = _format_collection_url($result, TRUE);
+      $old_source = 'islandora/object/' . $pid;
+      db_query('DELETE FROM {url_alias} WHERE alias = :alias', array(':alias' => $alias));
+      db_query('DELETE FROM {url_alias} WHERE source = :source', array(':source' => $old_source));
+      db_query('REPLACE INTO {url_alias} (`source`, `alias`, `language`) VALUES (:source, :alias, \'und\')',
+         array(':source' => $source, ':alias' => $alias));
       $update_count++;
-      // dpm('clean_label = "' . $clean_label .'"');
-      dpm('DELETE FROM url_alias WHERE alias = \'' . $alias . '\';' . "\n" .
-          'REPLACE INTO url_alias (`source`, `alias`, `language`) VALUES (\'' . $source . '\', \'' . $alias . '\', \'und\');' . "\n" .
-          'REPLACE INTO url_alias (`source`, `alias`, `language`) VALUES (\'' . $source . '\', \'' . $alias2 . '\', \'und\');');
+/*
+      dpm('DELETE FROM url_alias WHERE source = \'' . addslashes($old_source) . '\';' . "\n" .
+          'DELETE FROM url_alias WHERE alias = \'' . addslashes($alias) . '\';' . "\n" .
+          'REPLACE INTO url_alias (`source`, `alias`, `language`) VALUES (\'' . addslashes($source) . '\', \'' . addslashes($alias) . '\', \'und\');');
+*/
     }
     drupal_set_message(number_format($numFound) . t(' collections were found') . '<br>' .
       number_format($update_count) . t(' url_alias records were updated or created.'), 'info');
-    // dpm($results);
   }
   catch (Exception $e) {
     drupal_set_message(t('There was a problem generating the url_alias records.<br>') . print_r($e, true), 'warning');

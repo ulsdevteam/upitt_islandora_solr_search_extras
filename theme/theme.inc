@@ -5,9 +5,16 @@
  * Theme hooks.
  */
 
+function upitt_islandora_solr_search_extras_preprocess_islandora_solr_wrapper(&$variables) {
+  upitt_islandora_solr_search_extras_preprocess_islandora_objects_subset($variables);
+}
+
 function upitt_islandora_solr_search_extras_preprocess_islandora_objects_subset(&$variables) {
   $islandora_object = menu_get_object('islandora_object', 2);
   module_load_include('inc', 'islandora', 'includes/metadata');
+  $is_collection = _is_collection($islandora_object);
+  $variables['is_collection'] = $is_collection;
+
   if ($islandora_object) {
     $page_number = (empty($_GET['page'])) ? 0 : $_GET['page'];
     $page_size = (empty($_GET['pagesize'])) ? variable_get('islandora_basic_collection_page_size', '10') : $_GET['pagesize'];
@@ -18,11 +25,12 @@ function upitt_islandora_solr_search_extras_preprocess_islandora_objects_subset(
         'title' => $islandora_object->label,
         'alt' => $islandora_object->label,
         'path' => $collection_tn_url);
-      $variables['collection_img'] = theme('image', $params);
+      $variables['collection_tn_img'] = theme('image', $params);
     }
-    $variables['collection_metadata'] = islandora_retrieve_metadata_markup($islandora_object);
+    $variables['collection_page_metadata'] = islandora_retrieve_metadata_markup($islandora_object);
   }
   $variables['display_links'] = array();
+
 //  if (isset($_GET['display']) && $_GET['display'] <> 'grid') {
   $variables['pager'] = '';
 //  }
