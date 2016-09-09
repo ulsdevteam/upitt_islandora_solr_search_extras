@@ -12,10 +12,10 @@
 
   <div id="main-content">
     <div id="metadata-sidebar">
-  <?php if ($collection_metadata): ?>
+  <?php if ($collection_page_metadata): ?>
   <div class="islandora-basic-collection-metadata">
     <!--<p>using the islandora metadata framework</p>-->
-    <?php print $collection_metadata; ?> </div>
+    <?php print $collection_page_metadata; ?> </div>
   <?php endif; ?>
   
 	<?php print render($title_prefix); ?>
