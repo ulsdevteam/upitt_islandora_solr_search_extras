@@ -211,7 +211,7 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
   // /islandora/object/%islandora_object/from_search/% menu route above.
   module_load_include('inc', 'islandora_solr_search', 'includes/utilities');
   $skey = _get_skey($solr_results);
-  $solr_fields = _get_solr_setttings_fields();
+  $solr_fields = _get_solr_settings_fields();
   $tmp_title = '';
   $solr_results = islandora_solr_prepare_solr_results($solr_results);
   $object_results = $solr_results['response']['objects'];
