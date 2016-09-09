@@ -61,7 +61,6 @@ function upitt_islandora_solr_search_extras_menu() {
 }
 
 function upitt_islandora_solr_search_extras_search_specific(AbstractObject $islandora_object) {
-die();
   $solr_query = format_string('!field:!value', array(
               '!field' => 'RELS_EXT_isMemberOfCollection_uri_ms',
               '!value' => Apache_Solr_Service::escape('info:fedora/' . $islandora_object),
@@ -381,8 +380,32 @@ function _get_skey($solr_results) {
 }
 
 function _format_collection_url($fedora_label, $alias = FALSE) {
-  $strip_chars = array('.', ',', '/', '\'', '"');
-  $strip_words = array(' and ', ' the ', ' to ');
+  $one_off_replacements = array(
+      'bureau of police department of public safety pittsburgh pa records' => 'bureau-police-records-department-public-safety-pittsburgh-pa',
+      'bureau of building inspection department of public safety pittsburgh pa records' => 'bureau-building-inspection-department-public-safety-pittsburgh-pa',
+      'slavery manumission documents' => 'free-at-last-slavery-pittsburgh-18th-19th-centuries',
+      'hj heinz company photographs' => 'h-j-heinz-company-photographs'
+    );
+  $strip_chars = array('.', ',', '/', '\'', '"', ')', '(', ':', '#', '&');
+  $strip_words = array(' and ',
+                       ' the ',
+                       ' to ',
+                       ' of ',
+                       ' by ',
+                       ' for ',
+                       ' between ',
+                       ' in ',
+                       ' an ',
+                       ' a ',
+                       ' from ',
+    );
+  $strip_endings = array('');
+  foreach ($strip_endings as $rtrim) {
+    $fedora_label = rtrim($fedora_label, $rtrim);
+  }
+  if (isset($one_off_replacements[$fedora_label])) {
+    $fedora_label = $one_off_replacements[$fedora_label];
+  }
   return ($fedora_label) ? (($alias) ? 'collection/' : '/search_collection/') . str_replace($strip_chars, '', urldecode(str_replace("+", "-", urlencode(str_replace($strip_words, " ", strtolower(trim($fedora_label))))))) : '';
 }
 

@@ -106,11 +106,14 @@ function _map_url_alias_for_collection_pages() {
       db_query('REPLACE INTO {url_alias} (`source`, `alias`, `language`) VALUES (:source, :alias, \'und\')',
          array(':source' => $source, ':alias' => $alias));
       $update_count++;
+
 /*
+      dpm($alias . ', ' . $source);
       dpm('DELETE FROM url_alias WHERE source = \'' . addslashes($old_source) . '\';' . "\n" .
           'DELETE FROM url_alias WHERE alias = \'' . addslashes($alias) . '\';' . "\n" .
           'REPLACE INTO url_alias (`source`, `alias`, `language`) VALUES (\'' . addslashes($source) . '\', \'' . addslashes($alias) . '\', \'und\');');
 */
+
     }
     drupal_set_message(number_format($numFound) . t(' collections were found') . '<br>' .
       number_format($update_count) . t(' url_alias records were updated or created.'), 'info');
