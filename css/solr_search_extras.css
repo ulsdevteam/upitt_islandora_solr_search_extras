@@ -76,14 +76,14 @@
   margin: 0 auto;
 }
 
+.breadcrumb {
+  padding-top: 10px;
+}
+
 .content #metadata-sidebar {
   float: right;
   padding-left: 20px;
   width: 30%;
-}
-
-.datastream-block {
-  clear: both;
 }
 
 .islandora-solr-search-result {
