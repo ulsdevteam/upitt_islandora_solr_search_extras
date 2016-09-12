@@ -12,7 +12,7 @@
   <?php endif; ?>
 
   <?php if (isset($collection_page_metadata) && $is_first_page): ?>
-    <div id="metadata-sidebar" style="width: 33%; float: right; margin-left: 20px;">
+    <div id="metadata-sidebar">
       <div class="islandora-basic-collection-metadata">
       <?php print $collection_page_metadata; ?>
       </div>
@@ -38,10 +38,16 @@
       <?php print $islandora_solr_result_count; ?>
     </div>
   </div>
-  <?php print $solr_pager; ?>
-  <?php print $results; ?>
-  <?php print $solr_debug; ?>
-  <?php print $solr_pager; ?>
+
+   <?php if ($page['sidebar']): ?>
+     <?php print render($page['sidebar']); ?>
+   <?php endif; ?>
+  <div id="solr-search-results">
+    <?php print $solr_pager; ?>
+    <?php print $results; ?>
+    <?php print $solr_debug; ?>
+    <?php print $solr_pager; ?>
+  </div>
 </div>
 
 </div><!-- /end main-content -->

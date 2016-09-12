@@ -1,3 +1,7 @@
+#islandora-object-main {
+  width: 100%;
+}
+
 .islandora-basic-collection .islandora-solr-content {
   width: 99% !important;
 }
@@ -54,6 +58,32 @@
   margin-left: 1%;
   width: 70%;
   float: left;
+}
+
+.islandora-solr-content #sidebar {
+  width: 27%;
+  float: left;
+}
+
+.islandora-solr-content #solr-search-results {
+  width: 70%;
+  float: right;
+}
+
+.content .islandora-basic-collection-metadata-image {
+  width: 67%;
+  float: left;
+  margin: 0 auto;
+}
+
+.content #metadata-sidebar {
+  float: right;
+  padding-left: 20px;
+  width: 30%;
+}
+
+.datastream-block {
+  clear: both;
 }
 
 .islandora-solr-search-result {

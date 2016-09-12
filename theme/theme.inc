@@ -7,6 +7,7 @@
 
 function upitt_islandora_solr_search_extras_preprocess_islandora_solr_wrapper(&$variables) {
   upitt_islandora_solr_search_extras_preprocess_islandora_objects_subset($variables);
+  $variables['page']['sidebar'] = _get_solr_sidebar_blocks(TRUE);
 }
 
 function upitt_islandora_solr_search_extras_preprocess_islandora_objects_subset(&$variables) {
@@ -103,7 +104,7 @@ function _get_solr_results($islandora_object, &$variables) {
   $variables['solr_search'] = islandora_solr($solr_query);
 }
 
-function _get_solr_sidebar_blocks() {
+function _get_solr_sidebar_blocks($wrap = TRUE) {
   $sort_block = module_invoke('islandora_solr', 'block_view', 'sort');
   $facets_block = module_invoke('islandora_solr', 'block_view', 'basic_facets');
   $search_block = module_invoke('islandora_solr', 'block_view', 'advanced');
@@ -111,8 +112,8 @@ function _get_solr_sidebar_blocks() {
   $search_block['subject'] = 'Search';
   $search_block['content'] = drupal_render($search_block); 
 
-  return '
-<div id="sidebar">
+  return (($wrap) ? '
+<div id="sidebar">' : '').'
  <!-- div class="widget" -->
   <!-- div class="region region-sidebar" -->
         <div class="region region-sidebar">' .
@@ -121,8 +122,8 @@ _my_theme_solr_block($sort_block, 'upitt_islandora_solr_search_extras', 'sort', 
 ' . _my_theme_solr_block($facets_block, 'upitt_islandora_solr_search_extras', 'basic_facets', 'Filter Results') . '
         </div>
   <!-- /div -->
- <!--/div -->
-</div>
+ <!--/div -->'.(($wrap) ? '
+</div>' : '').'
 ';
 }
 
