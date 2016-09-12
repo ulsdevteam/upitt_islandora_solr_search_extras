@@ -94,6 +94,10 @@
   width: 88% !important;
 }
 
+#islandora-solr-advanced-search-form div.form-item {
+    min-width: 133px;
+}
+
 .nextitem-link, .previtem-link {
   float: left;
 }
