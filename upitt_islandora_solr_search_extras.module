@@ -797,7 +797,7 @@ function upitt_islandora_solr_search_extras_preprocess_page(&$vars) {
   }
   if ($islandora_object) {
     $upitt_date = _get_best_date($islandora_object);
-    $vars['title'] = rtrim(rtrim(rtrim($islandora_object->label, ') '), ')'), ',') . (($upitt_date) ? ', ' . $upitt_date : '');
+    $vars['title'] = _get_title_with_nonSort($islandora_object) . (($upitt_date) ? ', ' . $upitt_date : '');
 
     // remove sidebar - except when object is collectionCModel
     if (!$is_collection && ($item['path'] == 'islandora/object/%')) {
@@ -824,6 +824,14 @@ function upitt_islandora_solr_search_extras_preprocess_page(&$vars) {
       }
     }
   }
+}
+
+/** 
+ * Helper function to get the nonSort field and title field together
+ */
+function _get_title_with_nonSort($islandora_object) {
+  $nonSort = _get_solr_field_value_special($islandora_object, 'mods_titleInfo_nonSort_s', FALSE);
+  return (($nonSort) ? $nonSort . ' ' : '') . rtrim(rtrim(rtrim($islandora_object->label, ') '), ')'), ',');
 }
 
 /**
