@@ -797,7 +797,9 @@ function upitt_islandora_solr_search_extras_preprocess_page(&$vars) {
   }
   if ($islandora_object) {
     $upitt_date = _get_best_date($islandora_object);
-    $vars['title'] = _get_title_with_nonSort($islandora_object) . (($upitt_date) ? ', ' . $upitt_date : '');
+    $title = _get_title_with_nonSort($islandora_object);
+    $vars['title'] = $title . (($upitt_date) ? ', ' . $upitt_date : '');
+    drupal_set_title($title);
 
     // remove sidebar - except when object is collectionCModel
     if (!$is_collection && ($item['path'] == 'islandora/object/%')) {
