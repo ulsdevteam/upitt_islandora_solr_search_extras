@@ -831,7 +831,7 @@ function upitt_islandora_solr_search_extras_preprocess_page(&$vars) {
  */
 function _get_title_with_nonSort($islandora_object) {
   $nonSort = _get_solr_field_value_special($islandora_object, 'mods_titleInfo_nonSort_s', FALSE);
-  return (($nonSort) ? $nonSort . ' ' : '') . rtrim(rtrim(rtrim($islandora_object->label, ') '), ')'), ',');
+  return (($nonSort) ? $nonSort . ' ' : '') . rtrim(rtrim(rtrim(ucfirst($islandora_object->label), ') '), ')'), ',');
 }
 
 /**
