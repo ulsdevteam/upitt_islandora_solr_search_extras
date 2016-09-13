@@ -110,7 +110,7 @@ function _get_solr_sidebar_blocks($wrap = TRUE) {
   $search_block = module_invoke('islandora_solr', 'block_view', 'advanced');
   // For some reason, the result of this block call is a different structure.
   $search_block['subject'] = 'Search';
-  $search_block['content'] = drupal_render($search_block); 
+  $search_block['content'] = drupal_render($search_block);
 
   return (($wrap) ? '
 <div id="sidebar">' : '').'

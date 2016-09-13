@@ -76,7 +76,8 @@ function handle_islandora_view_object($islandora_object) {
   if (strstr($url, '/islandora/object/') && _is_collection($islandora_object)) {
     // Look up the alias record that matches the PID
     $raw_source = urldecode(str_replace('/islandora/object/', 'islandora/search_collection/', $url));
-    @list($source, $params) = explode('/search_collection/?', $raw_source);
+    @list($source, $junk) = explode('/from_search/', $raw_source);
+    @list($source, $params) = explode('/search_collection/?', $source);
     $params_arr = explode('&', $params);
     $query_params = array();
     foreach ($params_arr as $k => $paramPair) {
@@ -86,6 +87,9 @@ function handle_islandora_view_object($islandora_object) {
         $value = substr($paramPair, $equal_pos + 1);
         $query_params[$param] = $value;
       }
+    }
+    if ($junk) {
+      $query_params['skey'] = $junk;
     }
 
     $result = db_query('SELECT `alias` FROM {url_alias} WHERE `source` = :source', array(':source' => $source));
@@ -216,6 +220,7 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
   $solr_results = islandora_solr_prepare_solr_results($solr_results);
   $object_results = $solr_results['response']['objects'];
   $object_results = islandora_solr_prepare_solr_doc($object_results);
+
   $elements = array();
   $elements['solr_total'] = $solr_results['response']['numFound'];
   $elements['solr_start'] = $solr_results['response']['start'];
@@ -250,7 +255,6 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
         $object_results[$k]['thumbnail'] = $object_results[$k]['page_thumbnail'];
         $object_results[$k]['page_thumbnail'] = '';
       }
-
       if (variable_get('upitt_islandora_solr_search_extras_showparent_searchresults') && (array_search('MODS', $object_results[$k]['datastreams']) === FALSE)) {
         if (((!(isset($object_results[$k]['solr_doc']['RELS_EXT_isMemberOfCollection_uri_ms']))) ||
              (!(isset($object_results[$k]['solr_doc']['RELS_EXT_isPageOf_uri_ms']))) ||
@@ -545,6 +549,7 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
     'fq' => '', // ($is_dismax) ? $q_arr : '',
     'qf' => ($is_dismax) ? variable_get('islandora_solr_query_fields', 'dc.title^5 dc.subject^2 dc.description^2 dc.creator^2 dc.contributor^1 dc.type') : '',
   );
+
 /*  if ($is_dismax) {
     _add_dismax_params($query_processor);
   }
@@ -616,30 +621,6 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
  * Function to add needed params to a solr query processor when it is a dismax query.
  */
 function _add_dismax_params(&$query_processor) {
-/*
-  $query_processor->solrParams['facet'] = 'true';
-  $query_processor->solrParams['facet.mincount'] = 1;
-  $query_processor->solrParams['facet.limit'] = 20;
-  $query_processor->solrParams['facet.field'] = array('mods_name_creator_namePart_ms', 'mods_typeOfResource_ms', 'mods_relatedItem_host_titleInfo_title_ms',
-    'mods_subject_topic_ms', 'RELS_EXT_isMemberOfCollection_uri_ms', 'mods_name_depositor_namePart_ms', 
-    'mods_accessCondition_copyright_copyright_status_ms', 'mods_accessCondition_copyright_publication_status_ms');
-  $query_processor->solrParams['facet.date'] = array('mods_originInfo_type_sort_dateOther_dt', 'fgs_createdDate_dt', 'fgs_lastModifiedDate_dt');
-  $query_processor->solrParams['f.mods_originInfo_type_sort_dateOther_dt.facet.date.start'] = 'NOW/YEAR-1200YEARS';
-  $query_processor->solrParams['f.mods_originInfo_type_sort_dateOther_dt.facet.date.end'] = 'NOW';
-  $query_processor->solrParams['f.mods_originInfo_type_sort_dateOther_dt.facet.date.gap'] = '+1YEAR';
-  $query_processor->solrParams['f.mods_originInfo_type_sort_dateOther_dt.facet.mincount'] = 0;
-  $query_processor->solrParams['f.fgs_createdDate_dt.facet.date.start'] = 'NOW/YEAR-20YEARS';
-  $query_processor->solrParams['f.fgs_createdDate_dt.facet.date.end'] = 'NOW';
-  $query_processor->solrParams['f.fgs_createdDate_dt.facet.date.gap'] = '+1YEAR';
-  $query_processor->solrParams['f.fgs_createdDate_dt.facet.mincount'] = 0;
-  $query_processor->solrParams['f.fgs_lastModifiedDate_dt.facet.date.start'] = 'NOW/YEAR-20YEARS';
-  $query_processor->solrParams['f.fgs_lastModifiedDate_dt.facet.date.end'] = 'NOW';
-  $query_processor->solrParams['f.fgs_lastModifiedDate_dt.facet.date.gap'] = '+1YEAR';
-  $query_processor->solrParams['f.fgs_lastModifiedDate_dt.facet.mincount'] = 0;
-  $query_processor->solrParams['facet.date.start'] = 'NOW/YEAR-20YEARS';
-  $query_processor->solrParams['facet.date.end'] = 'NOW';
-  $query_processor->solrParams['facet.date.gap'] = '+1YEAR';
-*/
   $query_processor->solrDefType = 'dismax';
   $query_processor->solrParams['defType'] = 'dismax';
 }
@@ -885,13 +866,14 @@ function _get_pids_and_titles($skey, &$pids, &$titles, &$solr_search_url) {
  * This returns array of links for a page that came from refer: solr search results.
  */
 function _gen_solr_search_links($pid) {
+  $skey = (isset($_GET['skey']) ? $_GET['skey'] : '');
   $cur_url = $_SERVER['REQUEST_URI'];
   $parts = explode("/", $cur_url);
-  if (count($parts) < 5) {
+  if (count($parts) < 5 && !$skey) {
     return '';
   }
-  elseif ($parts[4] == 'from_search') {
-    $skey = $parts[5];
+  elseif ($parts[4] == 'from_search' || $skey) {
+    $skey = ($skey) ? $skey : $parts[5];
     @list($skey, $this_idx) = explode("-", $skey);
     $pids = $titles = array();
     $solr_search_url = '';
