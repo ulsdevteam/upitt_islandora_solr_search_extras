@@ -1,5 +1,8 @@
 <?php
 
+// TODO: must handle sort if it is passed -- need to update the solr_url that gets saved to solr_search_sessions 
+//       as well as properly parse that for creating the solrQuery
+
 /**
  * @file
  * Primary hook implementations.
@@ -29,8 +32,10 @@ function upitt_islandora_solr_search_extras_menu() {
     'islandora/object/%islandora_object/from_search/%' => array(
       'title callback' => 'upitt_islandora_solr_search_extras__islandora_drupal_title',
       'title arguments' => array(2),
-      'page callback' => 'drupal_get_form',
-      'page arguments' => array('upitt_islandora_solr_search_extras__islandora_view_object', 2, 4),
+//      'page callback' => 'drupal_get_form',
+//      'page arguments' => array('upitt_islandora_solr_search_extras__islandora_view_object', 2, 4),
+      'page callback' => 'upitt_islandora_solr_search_extras__islandora_view_object',
+      'page arguments' => array(2, 4),
       'type' => MENU_NORMAL_ITEM,
       'access callback' => 'upitt_islandora_solr_search_extras__islandora_object_access_callback',
       'access arguments' => array(ISLANDORA_VIEW_OBJECTS, 2),
@@ -642,7 +647,8 @@ function _get_solr_field_value_special($islandora_object, $field, $single_result
   $query_processor->executeQuery(FALSE);
   if ($query_processor->islandoraSolrResult['response']['numFound'] > 0) {
     $solr_results_doc = $query_processor->islandoraSolrResult['response']['objects']['0']['solr_doc'];
-    $value = (is_array($solr_results_doc[$field])) ? (($single_result) ? $solr_results_doc[$field][0] : implode("<br>", $solr_results_doc[$field])) : $solr_results_doc[$field];
+    $value = (isset($solr_results_doc[$field]) && is_array($solr_results_doc[$field])) ? (($single_result) ? $solr_results_doc[$field][0] : implode("<br>", $solr_results_doc[$field])) : 
+      (isset($solr_results_doc[$field]) ? $solr_results_doc[$field] : '');
   }
   return $value;
 }
@@ -849,7 +855,7 @@ function _get_pids_and_titles($skey, &$pids, &$titles, &$solr_search_url) {
                    'FROM {solr_search_sessions} s ' .
                    'JOIN {solr_search_skey_results} r ON (r.skey = s.skey) ' .
                    'WHERE s.skey = :s ORDER BY r.offset', array(':s' => $skey))->fetchAllAssoc('PID');
-
+  $row = NULL;
   foreach ($rows as $row) {
     $pid = $row->PID;
     $title = $row->title;
@@ -857,9 +863,15 @@ function _get_pids_and_titles($skey, &$pids, &$titles, &$solr_search_url) {
       $pids[$row->offset] = $pid;
       $titles[$row->offset] = $title;
     }
-  } 
-  $solr_search_url = $row->solr_search_url;
-  return $row->numResults;
+  }
+  if (is_object($row)) {
+    $solr_search_url = $row->solr_search_url;
+    $numResults = $row->numResults;
+  }
+  else {
+    $numResults = 0;
+  }
+  return $numResults;
 }
 
 /**
@@ -928,8 +940,10 @@ function upitt_islandora_solr_search_extras_preprocess_islandora_object(&$vars) 
   }
 }
 
-// solr search sessions handling
-function upitt_islandora_solr_search_extras__islandora_view_object($form, &$form_state, AbstractObject $object, $from_search = '') {
+// Solr search sessions handling.  If this was invoked via drupal_get_form, the inner content would
+// be wrapped with a <form> element and that breaks the functionality of the bookreader javascript.
+// 
+function upitt_islandora_solr_search_extras__islandora_view_object(AbstractObject $object, $from_search = '') {
   return islandora_view_object($object);
 }
 
