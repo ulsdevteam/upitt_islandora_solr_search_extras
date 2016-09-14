@@ -32,8 +32,6 @@ function upitt_islandora_solr_search_extras_menu() {
     'islandora/object/%islandora_object/from_search/%' => array(
       'title callback' => 'upitt_islandora_solr_search_extras__islandora_drupal_title',
       'title arguments' => array(2),
-//      'page callback' => 'drupal_get_form',
-//      'page arguments' => array('upitt_islandora_solr_search_extras__islandora_view_object', 2, 4),
       'page callback' => 'upitt_islandora_solr_search_extras__islandora_view_object',
       'page arguments' => array(2, 4),
       'type' => MENU_NORMAL_ITEM,
