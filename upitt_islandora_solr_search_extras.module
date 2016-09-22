@@ -777,6 +777,8 @@ function upitt_islandora_solr_search_extras_preprocess_page(&$vars) {
   if (($islandora_object) && ($item['path'] == 'islandora/object/%/from_search/%' || 
     $item['path'] == 'islandora/search_collection/%' ||
     !isset($vars['collection_metadata']))) {
+    // THIS sidebar applies only to Gamera 
+    $vars['page']['sidebar'] = array();
     $vars['solr_search_links'] = _gen_solr_search_links($islandora_object->id);
 //    $vars['collection_metadata'] = (function_exists('islandora_retrieve_metadata_markup')) ? islandora_retrieve_metadata_markup($islandora_object) : '';
   }
