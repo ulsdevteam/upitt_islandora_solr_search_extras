@@ -248,7 +248,9 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
           $options['query'] = $object_results[$k]['object_url_params'];
         }
         if (isset($object_results[$k]['object_url_fragment'])) {
-          $options['fragment'] = $object_results[$k]['object_url_fragment'];
+          // UNTIL the updated correct HOCR datatreams are in the system, disable the fragment here
+          $options['fragment'] = '';
+          // $options['fragment'] = $object_results[$k]['object_url_fragment'];
         }
         // The link may be preferred to take the user to the page result.
         $fragment = (isset($object_results[$k]['object_url_fragment']) && $object_results[$k]['object_url_fragment'] <> '') ? '#' . $object_results[$k]['object_url_fragment'] : '';
