@@ -1,10 +1,10 @@
 # upitt_islandora_solr_search_extras
 
 NOTE:  Due to how URL Alias is used here as well as the bulk-generated URLS for Islandora collection objects, there has been the potential for the underlying handler to be used if the alias is not correct for both the "islandora/search_collection/{PID}" and the "/islandora/object/{PID}".  This causes the page to display with two sidebars, thumbnails, and meta DESC.  In order to get the correct URLs, three steps:
-  1) run the "Solr search collections mapping" at /admin/islandora/tools/upitt_islandora_solr_search_extras 
-  2) run the bulk update at /admin/config/search/path/update_bulk.  This step will result in unique aliases that all have "-0" added to the end of them (because the previous step creates the initial record with the alias)
-  3) update the records so that both have the same alias.
-   mysql> update url_alias set alias = REPLACE(alias, '-0', '') where source like '%pitt:collection.%' and alias like '%-0';
+
+1. run the "Solr search collections mapping" at /admin/islandora/tools/upitt_islandora_solr_search_extras
+2. run the bulk update at /admin/config/search/path/update_bulk.  This step will result in unique aliases that all have "-0" added to the end of them (because the previous step creates the initial record with the alias)
+3. update the records so that both have the same alias.  `update url_alias set alias = REPLACE(alias, '-0', '') where source like '%pitt:collection.%' and alias like '%-0';`
 
 NOTE:  This module requires a patch to a file in the islandora_solr_search 
 module.  The /islandora_solr_search/includes/results.inc needs to be modified 
