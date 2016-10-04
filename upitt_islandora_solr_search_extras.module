@@ -249,8 +249,8 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
         }
         if (isset($object_results[$k]['object_url_fragment'])) {
           // UNTIL the updated correct HOCR datatreams are in the system, disable the fragment here
-          $options['fragment'] = '';
-          // $options['fragment'] = $object_results[$k]['object_url_fragment'];
+          // $options['fragment'] = '';
+          $options['fragment'] = $object_results[$k]['object_url_fragment'];
         }
         // The link may be preferred to take the user to the page result.
         $fragment = (isset($object_results[$k]['object_url_fragment']) && $object_results[$k]['object_url_fragment'] <> '') ? '#' . $object_results[$k]['object_url_fragment'] : '';
@@ -384,7 +384,6 @@ function _get_skey($solr_results) {
   }
   $lastmod = time();
   db_query('UPDATE {solr_search_sessions} SET `lastmod` = :lastmod WHERE skey = :skey', array('skey' => $skey, 'lastmod' => $lastmod));
-
   return $skey;
 }
 
@@ -552,7 +551,7 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
   $query_processor->solrParams = array(
     'fl' => $fl,
     'fq' => '', // ($is_dismax) ? $q_arr : '',
-    'qf' => ($is_dismax) ? variable_get('islandora_solr_query_fields', 'dc.title^5 dc.subject^2 dc.description^2 dc.creator^2 dc.contributor^1 dc.type') : '',
+    'qf' => '', // ($is_dismax) ? variable_get('islandora_solr_query_fields', 'dc.title^5 dc.subject^2 dc.description^2 dc.creator^2 dc.contributor^1 dc.type') : '',
   );
 
 /*  if ($is_dismax) {
@@ -674,9 +673,13 @@ function _islandora_solr_pid_parent_search($child_object, $solr_fields, $options
   foreach ($page_parents as $page_parent) {
     $page_parent_ids[] = $page_parent['object']['value'];
   }
-  $parent = array_merge($parent, $page_parent_ids);
+  if (count($page_parent_ids) > 0) {
+    $parent = $page_parent_ids;
+  }
   // Get the first value if there happens to be more than one Parent.
-  $pid = _collection_pid(array_pop($parent), $skey);
+  $pid = array_pop($parent);  
+  // WHY WAS THIS USING THIS COLLECTION LOOKUP?
+  //  $pid = _collection_pid(array_pop($parent), $skey);
   if ($pid) {
     // Build and execute Apache Solr query.
     module_load_include('inc', 'islandora_solr', 'includes/utilities');
