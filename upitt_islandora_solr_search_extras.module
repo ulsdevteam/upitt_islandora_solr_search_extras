@@ -260,7 +260,7 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
         $object_results[$k]['thumbnail'] = $object_results[$k]['page_thumbnail'];
         $object_results[$k]['page_thumbnail'] = '';
       }
-      if (variable_get('upitt_islandora_solr_search_extras_showparent_searchresults') && (array_search('MODS', $object_results[$k]['datastreams']) === FALSE)) {
+      if (variable_get('upitt_islandora_solr_search_extras_showparent_searchresults') && (array_search('MODS', $object_results[$k]['datastreams']) === FALSE) && _can_lookup_MODS($object_results[$k]['PID'])) {
         if (((!(isset($object_results[$k]['solr_doc']['RELS_EXT_isMemberOfCollection_uri_ms']))) ||
              (!(isset($object_results[$k]['solr_doc']['RELS_EXT_isPageOf_uri_ms']))) ||
              (!(isset($object_results[$k]['solr_doc']['RELS_EXT_isMemberOf_uri_ms'])))) &&
@@ -575,7 +575,7 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
         if (variable_get('upitt_islandora_solr_search_extras_showparent_searchresults')) {
           $islandora_object = islandora_object_load($rec['PID']);
           // inspect this object to see if it has no MODS info
-          if ($islandora_object && !isset($islandora_object['MODS'])) {
+          if ($islandora_object && !isset($islandora_object['MODS']) && _can_lookup_MODS($rec['PID'])) {
             $tmp_solr_doc = _islandora_solr_pid_parent_search(NULL, $solr_fields, array(), $skey, $rec['PID']);
             $rec['PID'] = isset($tmp_solr_doc['PID']['value']) ? $tmp_solr_doc['PID']['value'] : $rec['PID'];
             $rec['fgs_label_s'] = isset($tmp_solr_doc['fgs_label_s']['value']) ? $tmp_solr_doc['fgs_label_s']['value'] : $rec['fgs_label_s'];
@@ -1031,3 +1031,19 @@ function upitt_islandora_solr_search_extras_form_alter(&$form, $form_state, $for
     $form['#action'] = '/islandora/search';
   }
 }
+
+/**
+ * helper function to determine whether or not we can look  up the MODS for the object underlying the $pid
+ * based on the model of that object.
+ */
+function _can_lookup_MODS($pid) {
+  $islandora_object = islandora_object_load($pid);
+  $answer = FALSE;
+  if (is_object($islandora_object)) {
+    if (array_search('islandora:pageCModel', $islandora_object->models)) {
+      $answer = TRUE;
+    }
+  }
+  return $answer;
+}
+
