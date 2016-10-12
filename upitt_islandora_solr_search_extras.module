@@ -221,8 +221,6 @@ $tmp = $solr_results['response']['objects'];
 
   $solr_fields = _get_solr_settings_fields();
   $solr_results = islandora_solr_prepare_solr_results($solr_results); 
-// die('<div><pre style="float:left;width:49%">'.print_r($tmp, true) . '</pre><pre style="float:right;width:48%"><b>after calling islandora_solr_prepare_solr_results</b><br>'.print_r($solr_results['response']['objects'], true));
-
 
   $object_results = $solr_results['response']['objects'];
   $object_results = islandora_solr_prepare_solr_doc($object_results); 
@@ -236,7 +234,7 @@ $tmp = $solr_results['response']['objects'];
   $elements = array();
   $elements['solr_total'] = $solr_results['response']['numFound'];
   $elements['solr_start'] = $solr_results['response']['start'];
-//  $object_results = $solr_results['response']['objects'];
+
 
   // This loop will do the post-processing to perform the following tasks:
   // 
@@ -244,7 +242,6 @@ $tmp = $solr_results['response']['objects'];
   //   * Link any of the page object fields that were added by lookup
   foreach ($object_results as $k=>$solr_result_object) {
     // process this later
-// echo "<pre>".print_r($object_results[$k]['solr_doc'], true)."</pre>";
     if (isset($object_results[$k]['solr_doc']['dc.title']) && isset($object_results[$k]['solr_doc']['dc.title']['value'])) {
       $object_results[$k]['solr_doc']['dc.title']['value'] = _inject_skey_to_markup($object_results[$k]['solr_doc']['dc.title']['value'], $object_results[$k]['PID'], $skey . '-' . ($elements['solr_start'] + $k));
     }
@@ -295,7 +292,6 @@ $tmp = $solr_results['response']['objects'];
             $page_solr_results['response']['objects'][0]['solr_doc'] = $parent_solr_doc;
             unset($parent_solr_doc['PID']);
             $object_results[$k]['solr_doc'] = $parent_solr_doc;
-//            $object_results[$k]['solr_doc'] = array_merge($parent_solr_doc, $object_results[$k]['solr_doc']);
 /*            if ($tmp_title) {
               $object_results[$k]['tmp_solr_doc']['dc.title']['value'] = $tmp_title .
                 ' in ' . l($parent_solr_doc['solr_doc']['dc.title']['value'], _inject_skey($parent_solr_doc['object_url'], $parent_solr_doc['PID'], $skey . '-' . ($elements['solr_start'] + $k)));
