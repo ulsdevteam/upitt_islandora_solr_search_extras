@@ -213,6 +213,9 @@ function upitt_islandora_solr_search_extras_theme() {
  *   Returns the themed solr search results.
  */
 function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_results) {
+  // trick to prevent Varnish caching
+  setcookie('xx', microtime(true), time()+600, '/');
+
   // The skey value will need to be written into the links for pages as handled by
   // /islandora/object/%islandora_object/from_search/% menu route above.
   module_load_include('inc', 'islandora_solr_search', 'includes/utilities');
@@ -1066,7 +1069,7 @@ function _can_lookup_MODS($pid) {
   $islandora_object = islandora_object_load($pid);
   $answer = FALSE;
   if (is_object($islandora_object)) {
-    if (!(array_search('islandora:pageCModel', $islandora_object->models)===FALSE)) {
+    if (!(array_search('islandora:pageCModel', $islandora_object->models) === FALSE)) {
       $answer = TRUE;
     }
   }
