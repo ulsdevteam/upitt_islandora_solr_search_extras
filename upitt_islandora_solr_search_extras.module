@@ -2,7 +2,6 @@
 
 // TODO: must handle sort if it is passed -- need to update the solr_url that gets saved to solr_search_sessions 
 //       as well as properly parse that for creating the solrQuery
-
 /**
  * @file
  * Primary hook implementations.
@@ -218,19 +217,38 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
   // /islandora/object/%islandora_object/from_search/% menu route above.
   module_load_include('inc', 'islandora_solr_search', 'includes/utilities');
   $skey = _get_skey($solr_results);
+$tmp = $solr_results['response']['objects'];
+
   $solr_fields = _get_solr_settings_fields();
-  $tmp_title = '';
-  $solr_results = islandora_solr_prepare_solr_results($solr_results);
+  $solr_results = islandora_solr_prepare_solr_results($solr_results); 
+// die('<div><pre style="float:left;width:49%">'.print_r($tmp, true) . '</pre><pre style="float:right;width:48%"><b>after calling islandora_solr_prepare_solr_results</b><br>'.print_r($solr_results['response']['objects'], true));
+
+
   $object_results = $solr_results['response']['objects'];
-  $object_results = islandora_solr_prepare_solr_doc($object_results);
+  $object_results = islandora_solr_prepare_solr_doc($object_results); 
+
+  // Get the field labels from the current instance of solr_results
+  $field_labels = array();
+  foreach ($solr_fields as $key => $value) {
+    $field_labels[$key] = (is_array($value) ? $value['label'] : $value);
+  }
 
   $elements = array();
   $elements['solr_total'] = $solr_results['response']['numFound'];
   $elements['solr_start'] = $solr_results['response']['start'];
+//  $object_results = $solr_results['response']['objects'];
+
+  // This loop will do the post-processing to perform the following tasks:
+  // 
+  //   * Add the page_number element if needed
+  //   * Link any of the page object fields that were added by lookup
   foreach ($object_results as $k=>$solr_result_object) {
+    // process this later
+// echo "<pre>".print_r($object_results[$k]['solr_doc'], true)."</pre>";
     if (isset($object_results[$k]['solr_doc']['dc.title']) && isset($object_results[$k]['solr_doc']['dc.title']['value'])) {
       $object_results[$k]['solr_doc']['dc.title']['value'] = _inject_skey_to_markup($object_results[$k]['solr_doc']['dc.title']['value'], $object_results[$k]['PID'], $skey . '-' . ($elements['solr_start'] + $k));
     }
+    $parent_pid = NULL;
     $object_results[$k]['object_url'] = _inject_skey($object_results[$k]['object_url'], $object_results[$k]['PID'], $skey . '-' . ($elements['solr_start'] + $k));
     if ((isset($object_results[$k]['datastreams']))) {
       $object_results[$k]['page_solr_doc'] = array();
@@ -261,68 +279,70 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
         $object_results[$k]['page_thumbnail'] = '';
       }
       if (variable_get('upitt_islandora_solr_search_extras_showparent_searchresults') && (array_search('MODS', $object_results[$k]['datastreams']) === FALSE) && _can_lookup_MODS($object_results[$k]['PID'])) {
-        if (((!(isset($object_results[$k]['solr_doc']['RELS_EXT_isMemberOfCollection_uri_ms']))) ||
+        // this logic might not matter since _can_lookup_MODS limits this to only page objects
+        /* if (((!(isset($object_results[$k]['solr_doc']['RELS_EXT_isMemberOfCollection_uri_ms']))) ||
              (!(isset($object_results[$k]['solr_doc']['RELS_EXT_isPageOf_uri_ms']))) ||
              (!(isset($object_results[$k]['solr_doc']['RELS_EXT_isMemberOf_uri_ms'])))) &&
-            (isset($object_results[$k]['object_url']))) {
-          $solr_doc = _islandora_solr_pid_parent_search($object_results[$k], $solr_fields, $options, $skey, '');
-          if (is_array($solr_doc)) {
+            (isset($object_results[$k]['object_url']))) { */
+        if  (isset($object_results[$k]['object_url'])) {
+          $parent_solr_doc = _islandora_solr_pid_parent_search($object_results[$k], $solr_fields, $options, $skey, '');
+          // check to see that there is actually anything in the search result doc
+          if (array_key_exists('PID', $parent_solr_doc) || TRUE) {
             // Keep the existing title value for later.
-            if (isset($object_results[$k]['dc.title'])) {
-              $tmp_title = $object_results[$k]['dc.title']['value'];
-            }
-            $page = $object_results[$k];
-            $object_results[$k]['solr_doc'] = $solr_doc;
-            $object_results[$k]['page_solr_doc'] = $page['solr_doc'];
-   // Perhaps the child object thumbnail will be needed to display in the islandora-solr-extras.tpl.php.
-   /*
-            if (isset($page['datastreams']) && array_search('TN', $page['datastreams'])) {
-              $options = array('html' => TRUE);
-              if (isset($page['object_label'])) {
-                $options['attributes']['title'] = $page['object_label'];
-              }
-              if (isset($page['object_url_params'])) {
-                $options['query'] = $page['object_url_params'];
-              }
-              if (isset($page['object_url_fragment'])) {
-                $options['fragment'] = $page['object_url_fragment'];
-              }
-              $page_image = theme('image', array(
-                'path' => url("islandora/object/{$page['PID']}/datastream/TN/view"),
-                'attributes' => array(),
-                'width' => '60px',
-              ));
-              $object_results[$k]['page_thumbnail'] = l($page_image, _inject_skey($page['object_url'], '', $skey . '-' . ($elements['solr_start'] + $k)), $options);
-            }
-    */
-            if ($tmp_title) {
-              $object_results[$k]['solr_doc']['dc.title']['value'] = $tmp_title .
-                ' in ' . l($solr_doc['solr_doc']['dc.title']['value'], _inject_skey($solr_doc['object_url'], $solr_doc['PID'], $skey . '-' . ($elements['solr_start'] + $k)));
-            }
+            $parent_pid = $parent_solr_doc['PID'];
+            $object_results[$k]['page_solr_doc'] = $object_results[$k]['solr_doc'];
+            // Link any of the page object fields that were added by lookup
+            $page_solr_results['response']['objects'][0]['solr_doc'] = $parent_solr_doc;
+            unset($parent_solr_doc['PID']);
+            $object_results[$k]['solr_doc'] = $parent_solr_doc;
+//            $object_results[$k]['solr_doc'] = array_merge($parent_solr_doc, $object_results[$k]['solr_doc']);
+/*            if ($tmp_title) {
+              $object_results[$k]['tmp_solr_doc']['dc.title']['value'] = $tmp_title .
+                ' in ' . l($parent_solr_doc['solr_doc']['dc.title']['value'], _inject_skey($parent_solr_doc['object_url'], $parent_solr_doc['PID'], $skey . '-' . ($elements['solr_start'] + $k)));
+            } */
           }
         }
       }
-      if (($object_results[$k]['solr_doc']['dc.title']['value']) == '') {
-        $object_results[$k]['solr_doc']['dc.title']['value'] = $page['object_label'];
-      }
-      if ((stristr($object_results[$k]['content_models'][0], 'pageCModel') == 'pageCModel') &&
-        (substr($object_results[$k]['object_label'], 0, 5) == 'Page ')) {
-        // Get the page # value from the object_label - and create a new item that will be
-        // rendered as the page number.
-        @list($keep, $junk) = explode(", ", $object_results[$k]['object_label']);
-        $page_number = str_replace("Page ", "", $keep);
-        if (is_numeric($page_number)) {
-          $object_results[$k]['solr_doc']['page_number'] = array('value' => 'Page: ' . $page_number, 'label' => 'Page #', 'class' => '' );
-        }
+    }
+    // 1. Add the page number if applicable
+    if ((stristr($object_results[$k]['content_models'][0], 'pageCModel') == 'pageCModel') &&
+      (substr($object_results[$k]['object_label'], 0, 5) == 'Page ')) {
+      // Get the page # value from the object_label - and create a new item that will be
+      // rendered as the page number.
+      @list($keep, $junk) = explode(", ", $object_results[$k]['object_label']);
+      $page_number = str_replace("Page ", "", $keep);
+      if (is_numeric($page_number)) {
+        $object_results[$k]['solr_doc']['page_number'] = array('value' => 'Page: ' . $page_number, 'label' => 'Page #', 'class' => '' );
       }
     }
+
+    // Look up any default display fields that are mapped to link_to_object 
+    if (array_key_exists('RELS_EXT_isMemberOfCollection_uri_ms', $object_results[$k]['solr_doc']) && array_key_exists('value', $object_results[$k]['solr_doc']['RELS_EXT_isMemberOfCollection_uri_ms']) &&
+      (strip_tags($object_results[$k]['solr_doc']['RELS_EXT_isMemberOfCollection_uri_ms']['value']) == $object_results[$k]['solr_doc']['RELS_EXT_isMemberOfCollection_uri_ms']['value'])) {
+      $links = array();
+      $col_pids = explode(",", $object_results[$k]['solr_doc']['RELS_EXT_isMemberOfCollection_uri_ms']['value']);
+      foreach ($col_pids as $col_pid) {
+        $link = _collection_pid($col_pid, $skey);
+        $link_text = _get_solr_field_value_special(NULL, 'dc.title', TRUE, str_replace('info:fedora/', '', $col_pid));
+        $link_options = array('attributes' => array('title' => $link_text));
+        $links[] = l($link_text, $link, $link_options);
+      }
+      $collection_links[$k] = implode(', ', $links);
+      $object_results[$k]['solr_doc']['RELS_EXT_isMemberOfCollection_uri_ms']['value'] = $collection_links[$k];
+    }
+
+    $solr_results['response']['objects'][$k] = $object_results[$k];
   }
+
+  $object_results = $solr_results['response']['objects'];
+
   // Return themed search results.
   return theme('islandora_solr_extras', array('results' => $object_results, 'elements' => $elements));
 }
 
 function _get_skey($solr_results) {
   $lastmod_limit = time() - CST_SESSION_LIFETIME;
+  $filter_index = 0;
   db_query('DELETE FROM {solr_search_skey_results} WHERE skey IN (SELECT skey FROM {solr_search_sessions} WHERE lastmod < :lastmod_limit)', array(':lastmod_limit' => $lastmod_limit));
   db_query('DELETE FROM {solr_search_sessions WHERE lastmod < :lastmod_limit', array(':lastmod_limit' => $lastmod_limit));
   if (!isset($solr_results['responseHeader']['params'])) {
@@ -633,10 +653,10 @@ function _add_dismax_params(&$query_processor) {
 /**
  * Helper function to lookup any solr field value for an islandora_object.
  */ 
-function _get_solr_field_value_special($islandora_object, $field, $single_result = TRUE) {
+function _get_solr_field_value_special($islandora_object, $field, $single_result = TRUE, $pid = '') {
   $value = NULL;
   $query_processor = new IslandoraSolrQueryProcessor();
-  $query_processor->solrQuery = 'PID:' . str_replace(":", "\:", $islandora_object->id);
+  $query_processor->solrQuery = 'PID:' . str_replace(":", "\:", (is_null($islandora_object) && $pid) ? $pid : $islandora_object->id);
   $query_processor->solrStart = 0;
   $query_processor->solrLimit = 1;
   $query_processor->solrParams = array(
@@ -727,9 +747,9 @@ function _islandora_solr_pid_parent_search($child_object, $solr_fields, $options
         $results['dc.title']['value'] = l($results['dc.title']['value'], $child_object['object_url'], $options);
       }
       // Remove the PID field if it was added for the query to run valid.
-      if (!$solr_fields_had_PID) {
+/*      if (!$solr_fields_had_PID) {
         unset($results['PID']);
-      }
+      }*/
       return $results;
     }
     catch (Exception $e) {
@@ -966,7 +986,7 @@ function upitt_islandora_solr_search_extras__islandora_object_access_callback($p
  */
 function _collection_pid($url, $skey) {
   // value like "islandora/object/pitt:collection.121/search_collection/catch_all_fields_mt:(white)"
-  $stripped = str_replace(array("islandora/search_collection/", "islandora/object/"), '', $url);
+  $stripped = str_replace(array("islandora/search_collection/", "islandora/object/", "info:fedora/"), '', $url);
   @list($stripped, $junk) = explode('/search_collection/', $stripped);
   @list($pid, $junk) = explode('/from_search', $stripped);
   // The PID should never be a page or any other object that was looked up based on it not having MODS info -- 
@@ -978,8 +998,9 @@ function _collection_pid($url, $skey) {
     if ($record = $result->fetchAssoc()) {
       $source_url = $record['source'];
       $pid = str_replace('islandora/search_collection/', '', $source_url);
+      return $pid;
     }
-    elseif (!in_array('islandora:collectionCModel', $islandora_object->models)) {
+    if (in_array('islandora:collectionCModel', $islandora_object->models) === FALSE) {
       // If the object is part of two collections on the same site, there is no way to return the correct collection at this point - 
       // returns THE FIRST collection PID from the parent collection objects.
       $parent = $islandora_object->getParents();
@@ -990,6 +1011,15 @@ function _collection_pid($url, $skey) {
       }
       $parent = array_merge($parent, $collection_ids);
       $pid = array_pop($parent);
+    } else {
+      // url represents a collection, simply look up the alias
+      $source = 'islandora/object/' . $pid;
+      $result = db_query('SELECT `alias` FROM {url_alias} WHERE `source` = :source', array(':source' => $source));
+      if ($record = $result->fetchAssoc()) {
+        if ($record['alias']) {
+          $pid = $record['alias'];
+        }
+      }
     }
   }
 
@@ -1040,7 +1070,7 @@ function _can_lookup_MODS($pid) {
   $islandora_object = islandora_object_load($pid);
   $answer = FALSE;
   if (is_object($islandora_object)) {
-    if (array_search('islandora:pageCModel', $islandora_object->models)) {
+    if (!(array_search('islandora:pageCModel', $islandora_object->models)===FALSE)) {
       $answer = TRUE;
     }
   }

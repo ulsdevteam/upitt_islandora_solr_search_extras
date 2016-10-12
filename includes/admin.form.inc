@@ -120,7 +120,7 @@ function _map_url_alias_for_collection_pages() {
   }
   catch (Exception $e) {
     drupal_set_message(t('There was a problem generating the url_alias records.<br>') . print_r($e, true), 'warning');
-    error_log('EXCEPTION in _save_solr_search_session : called from ' . $_SERVER['SERVER_NAME'] .
+    error_log('EXCEPTION in _map_url_alias_for_collection_pages : called from ' . $_SERVER['SERVER_NAME'] .
 ' - ' . $_SERVER['REQUEST_URI'] . '
 ' . print_r($e, true));
     $skey = '';
