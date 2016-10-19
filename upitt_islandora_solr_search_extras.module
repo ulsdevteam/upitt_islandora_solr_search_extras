@@ -220,7 +220,6 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
   // /islandora/object/%islandora_object/from_search/% menu route above.
   module_load_include('inc', 'islandora_solr_search', 'includes/utilities');
   $skey = _get_skey($solr_results);
-$tmp = $solr_results['response']['objects'];
 
   $solr_fields = _get_solr_settings_fields();
   $solr_results = islandora_solr_prepare_solr_results($solr_results); 
@@ -315,6 +314,8 @@ $tmp = $solr_results['response']['objects'];
       }
     }
 
+    // This part needs to call a dynamic "prepare function that will use the configurations that are in the solr settings | default display fields
+    // to get their specific link_to_search, link_to_object, link_text_text, etc.
     // Look up any default display fields that are mapped to link_to_object 
     if (array_key_exists('RELS_EXT_isMemberOfCollection_uri_ms', $object_results[$k]['solr_doc']) && array_key_exists('value', $object_results[$k]['solr_doc']['RELS_EXT_isMemberOfCollection_uri_ms']) &&
       (strip_tags($object_results[$k]['solr_doc']['RELS_EXT_isMemberOfCollection_uri_ms']['value']) == $object_results[$k]['solr_doc']['RELS_EXT_isMemberOfCollection_uri_ms']['value'])) {
@@ -364,11 +365,13 @@ function _get_skey($solr_results) {
     @list($search, $junk) = explode('?', $request_uri);
     $solr_filters = $used_filters = array();
     $indexer = 0;
-    foreach ($solr_results['responseHeader']['params']['fq'] as $k=>$filter) {
-      if (array_search($filter, $used_filters) === FALSE) {
-        $solr_filters[] = 'f[' . $indexer . ']=' . $filter;
-        $used_filters[] = $filter;
-        $indexer++;
+    if (isset($solr_results['responseHeader']['params']['fq']) && is_array($solr_results['responseHeader']['params']['fq'])) {
+      foreach ($solr_results['responseHeader']['params']['fq'] as $k=>$filter) {
+        if (array_search($filter, $used_filters) === FALSE) {
+          $solr_filters[] = 'f[' . $indexer . ']=' . $filter;
+          $used_filters[] = $filter;
+          $indexer++;
+        }
       }
     }
     if (isset($_GET['q']) && strstr($_GET['q'], '/search_collection/')) {
@@ -516,12 +519,14 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
 
     $used_filters = $q_arr = $solr_filters = array();
     $filter_index = 0;
-    foreach ($solr_results['responseHeader']['params']['fq'] as $k=>$filter) {
-      if (array_search($filter, $used_filters) === FALSE) {
-        $solr_filters[] = 'f[' . $filter_index . ']=' . $filter;
-        $q_arr[] = $filter;
-        $filter_index++;
-        $used_filters[] = $filter;
+    if (is_array($solr_results['responseHeader']['params']['fq']) && count($solr_results['responseHeader']['params']['fq']) > 0) {
+      foreach ($solr_results['responseHeader']['params']['fq'] as $k=>$filter) {
+        if (array_search($filter, $used_filters) === FALSE) {
+          $solr_filters[] = 'f[' . $filter_index . ']=' . $filter;
+          $q_arr[] = $filter;
+          $filter_index++;
+          $used_filters[] = $filter;
+        }
       }
     }
     if ($search && $search <> '/islandora/search') {
