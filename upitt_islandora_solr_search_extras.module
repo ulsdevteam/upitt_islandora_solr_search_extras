@@ -213,6 +213,9 @@ function upitt_islandora_solr_search_extras_theme() {
  *   Returns the themed solr search results.
  */
 function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_results) {
+  // trick to prevent Varnish caching
+  setcookie('xx', microtime(true), time()+600, '/');
+
   // The skey value will need to be written into the links for pages as handled by
   // /islandora/object/%islandora_object/from_search/% menu route above.
   module_load_include('inc', 'islandora_solr_search', 'includes/utilities');
@@ -391,12 +394,10 @@ function _get_skey($solr_results) {
       }
     }
     if ($is_dismax && $search) {
-      $filter_index++;
-      $solr_filters[] = 'f[' . $filter_index . ']=catch_all_fields_mt:' . $search;
+      $solr_filters[] = 'q=catch_all_fields_mt:' . $search;
     }
     // Generate the effective search URL conditionally based on whether or not the search is on a collection object, or if search is dismax.
     $solr_url = (($collection_object) ? _format_collection_url($collection_object->label, TRUE) . '/' : '/islandora/search/') . '?islandora_solr_search_navigation=0&' . implode('&', $solr_filters);
-
     $skey = db_query('SELECT s.skey FROM {solr_search_sessions} s JOIN {solr_search_skey_results} r ON (r.skey = s.skey) WHERE s.solr_search_url = :u', array(':u' => $solr_url))->fetchField();
     if (!$skey) {
       $skey = md5(date('c'));
@@ -448,7 +449,7 @@ function _inject_skey_to_markup($markup, $PID, $skey, $fragment) {
   }
   preg_match('/^<a.*?href=(["\'])(.*?)\1.*$/', $markup, $m);
   return str_replace(array('/islandora/object/' . urlencode($PID) . '/from_search/', $m[2]),
-                     array('', '/islandora/object/' . urlencode($PID) . '/from_search/' . $skey . (isset($fragment) ? '#' . $fragment : '')), $markup);
+                     array('', '/islandora/object/' . urlencode($PID) . '/from_search/' . $skey . ((isset($fragment) && ($fragment <> '')) ? '#' . $fragment : '')), $markup);
 }
 
 function _inject_skey($url, $PID, $skey) {
@@ -554,14 +555,13 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
       }
     }
     if ($search && $is_dismax) {
-      $q_arr[] = 'catch_all_fields_mt:' . $search;
-      $filter_index++;
-      $solr_filters[] = 'f[' . $filter_index . ']=catch_all_fields_mt:' . $search;
+      $q = 'catch_all_fields_mt:' . $search;
+    }
+    else {
+      $q = ((count($q_arr) > 0) ? '(' : '') . implode(') AND (', $q_arr) . ((count($q_arr) > 0) ? ')' : '');
     }
     // Generate the effective search URL conditionally based on whether or not the search is on a collection object, or if search is dismax.
     $solr_url = (($collection_object) ? _format_collection_url($collection_object->label, TRUE) . '/' : '/islandora/search/') . '?islandora_solr_search_navigation=0&' . implode('&', $solr_filters);
-
-    $q = ((count($q_arr) > 0) ? '(' : '') . implode(') AND (', $q_arr) . ((count($q_arr) > 0) ? ')' : '');
   }
   $solr_base_filter = trim(variable_get('islandora_solr_base_filter'));
   $fl = 'PID,fgs_label_s';
@@ -1105,5 +1105,4 @@ function _fix_fragment_searchterms_only($fragment, $query_processor) {
     return '';
   }
 }
-
 
