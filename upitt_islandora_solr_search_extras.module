@@ -213,9 +213,6 @@ function upitt_islandora_solr_search_extras_theme() {
  *   Returns the themed solr search results.
  */
 function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_results) {
-  // trick to prevent Varnish caching
-  setcookie('xx', microtime(true), time()+600, '/');
-
   // The skey value will need to be written into the links for pages as handled by
   // /islandora/object/%islandora_object/from_search/% menu route above.
   module_load_include('inc', 'islandora_solr_search', 'includes/utilities');
@@ -245,9 +242,10 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
   foreach ($object_results as $k=>$solr_result_object) {
     // process this later
     if (isset($object_results[$k]['solr_doc']['dc.title']) && isset($object_results[$k]['solr_doc']['dc.title']['value'])) {
-      $object_results[$k]['solr_doc']['dc.title']['value'] = _inject_skey_to_markup($object_results[$k]['solr_doc']['dc.title']['value'], $object_results[$k]['PID'], $skey . '-' . ($elements['solr_start'] + $k));
+      $object_results[$k]['solr_doc']['dc.title']['value'] = _inject_skey_to_markup($object_results[$k]['solr_doc']['dc.title']['value'], $object_results[$k]['PID'], $skey . '-' . ($elements['solr_start'] + $k), $object_results[$k]['object_url_fragment']);
     }
     $parent_pid = NULL;
+
     $object_results[$k]['object_url'] = _inject_skey($object_results[$k]['object_url'], $object_results[$k]['PID'], $skey . '-' . ($elements['solr_start'] + $k));
     if ((isset($object_results[$k]['datastreams']))) {
       $object_results[$k]['page_solr_doc'] = array();
@@ -269,8 +267,7 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
           // $options['fragment'] = '';
           $options['fragment'] = $object_results[$k]['object_url_fragment'];
         }
-        // The link may be preferred to take the user to the page result.
-        $fragment = (isset($object_results[$k]['object_url_fragment']) && $object_results[$k]['object_url_fragment'] <> '') ? '#' . $object_results[$k]['object_url_fragment'] : '';
+
         $object_results[$k]['thumbnail'] = l($image, $object_results[$k]['object_url'], $options);
       }
       else {
@@ -294,6 +291,11 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
             $page_solr_results['response']['objects'][0]['solr_doc'] = $parent_solr_doc;
             unset($parent_solr_doc['PID']);
             $object_results[$k]['solr_doc'] = $parent_solr_doc;
+
+            if (isset($object_results[$k]['solr_doc']['dc.title']['value'])) {
+              $object_results[$k]['solr_doc']['dc.title']['value'] = 'TEST: ' . l($parent_solr_doc['solr_doc']['dc.title']['value'], _inject_skey($parent_solr_doc['object_url'], $parent_solr_doc['PID'], $skey . '-' . ($elements['solr_start'] + $k)), $options);
+            }
+
 /*            if ($tmp_title) {
               $object_results[$k]['tmp_solr_doc']['dc.title']['value'] = $tmp_title .
                 ' in ' . l($parent_solr_doc['solr_doc']['dc.title']['value'], _inject_skey($parent_solr_doc['object_url'], $parent_solr_doc['PID'], $skey . '-' . ($elements['solr_start'] + $k)));
@@ -439,14 +441,14 @@ function _format_collection_url($fedora_label, $alias = FALSE) {
   return ($fedora_label) ? (($alias) ? 'collection/' : '/search_collection/') . str_replace($strip_chars, '', urldecode(str_replace("+", "-", urlencode(str_replace($strip_words, " ", strtolower(trim($fedora_label))))))) : '';
 }
 
-function _inject_skey_to_markup($markup, $PID, $skey) {
+function _inject_skey_to_markup($markup, $PID, $skey, $fragment) {
   // Since these solr results are also rendered on a collection page, only inject if result is for the search page!
   if (!$skey) {
     return $markup;
   }
   preg_match('/^<a.*?href=(["\'])(.*?)\1.*$/', $markup, $m);
   return str_replace(array('/islandora/object/' . urlencode($PID) . '/from_search/', $m[2]),
-                     array('', '/islandora/object/' . urlencode($PID) . '/from_search/' . $skey), $markup);
+                     array('', '/islandora/object/' . urlencode($PID) . '/from_search/' . $skey . (isset($fragment) ? '#' . $fragment : '')), $markup);
 }
 
 function _inject_skey($url, $PID, $skey) {
