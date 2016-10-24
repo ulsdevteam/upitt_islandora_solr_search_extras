@@ -218,6 +218,10 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
   module_load_include('inc', 'islandora_solr_search', 'includes/utilities');
   $skey = _get_skey($solr_results);
 
+//  // Load collections from memcache
+//  $collections = cache_get('ioc__collectionCModel', 'cache');
+//  error_log('collections = ' . print_r($collections, true));
+
   $solr_fields = _get_solr_settings_fields();
   $solr_results = islandora_solr_prepare_solr_results($solr_results); 
 
@@ -293,7 +297,7 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
             $object_results[$k]['solr_doc'] = $parent_solr_doc;
 
             if (isset($object_results[$k]['solr_doc']['dc.title']['value'])) {
-              $object_results[$k]['solr_doc']['dc.title']['value'] = 'TEST: ' . l($parent_solr_doc['solr_doc']['dc.title']['value'], _inject_skey($parent_solr_doc['object_url'], $parent_solr_doc['PID'], $skey . '-' . ($elements['solr_start'] + $k)), $options);
+              $object_results[$k]['solr_doc']['dc.title']['value'] = l($parent_solr_doc['solr_doc']['dc.title']['value'], _inject_skey($parent_solr_doc['object_url'], $parent_solr_doc['PID'], $skey . '-' . ($elements['solr_start'] + $k)), $options);
             }
 
 /*            if ($tmp_title) {
