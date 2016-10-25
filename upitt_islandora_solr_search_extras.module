@@ -72,7 +72,7 @@ function upitt_islandora_solr_search_extras_search_specific(AbstractObject $isla
 
 // This will redirect old /islandora/object/{PID} urls for collections to valid collection alias urls if they exist.
 // This also must prevent a redirect-loop from happening by inspecting the actual URL for this object.
-function handle_islandora_view_object($islandora_object) {
+function upitt_islandora_solr_search_extras_islandora_view_object($islandora_object) {
   $url = $_SERVER['REQUEST_URI'];
   // Is a valid path for redirection, and is a collection...
   if (strstr($url, '/islandora/object/') && _is_collection($islandora_object)) {
@@ -682,9 +682,8 @@ function _get_solr_field_value_special($islandora_object, $field, $single_result
 /**
  * Helper function to lookup the parent object based on a PID value.
  */
-function _islandora_solr_pid_parent_search($child_object, $solr_fields, $options, $skey, $lookup_pid = '') {
+function _islandora_solr_pid_parent_search($child_object, $solr_fields, $options, $skey, $lookup_pid = '', $child_solr_doc = NULL) {
   $child_pid = ($lookup_pid) ? $lookup_pid : $child_object['PID'];
-
   $solr_fields_had_PID = !(array_search('PID', $solr_fields) === FALSE);
   // PID must be in the search
   if (!$solr_fields_had_PID) {
@@ -693,6 +692,7 @@ function _islandora_solr_pid_parent_search($child_object, $solr_fields, $options
   $solr_fields_keys = array_keys($solr_fields);
   $solr_fields_csv = implode(",", $solr_fields_keys);
   $_islandora_solr_queryclass = new IslandoraSolrQueryProcessor();
+
   $islandora_object = islandora_object_load($child_pid);
   $parent = $islandora_object->getParents();
   $page_parents = $islandora_object->relationships->get(NULL, 'isPageOf');
@@ -705,6 +705,7 @@ function _islandora_solr_pid_parent_search($child_object, $solr_fields, $options
   }
   // Get the first value if there happens to be more than one Parent.
   $pid = array_pop($parent);  
+
   // WHY WAS THIS USING THIS COLLECTION LOOKUP?
   //  $pid = _collection_pid(array_pop($parent), $skey);
   if ($pid) {
@@ -794,7 +795,7 @@ function upitt_islandora_solr_search_extras_preprocess_page(&$vars) {
   if (is_array($item)) {
     if (($item['map'][0] == 'user') || ($item['path'] == 'islandora/object/%/from_search/%') || 
       ($item['path'] == 'islandora/object/%/datastream/%/htmledit') ||
-      ($item['path'] == 'islandora/object/%/viewer') || $item['path'] == 'collections') {
+      ($item['path'] == 'islandora/object/%/viewer') || ($item['path'] == 'collections')) {
       // remove sidebar for /user page in case it is there
       $vars['page']['sidebar'] = array();
     }
@@ -809,6 +810,8 @@ function upitt_islandora_solr_search_extras_preprocess_page(&$vars) {
   if (($islandora_object) && ($item['path'] == 'islandora/object/%/from_search/%' || 
     $item['path'] == 'islandora/search_collection/%' ||
     !isset($vars['collection_metadata']))) {
+    // THIS sidebar applies only to Gamera 
+    $vars['page']['sidebar'] = array();
     $vars['solr_search_links'] = _gen_solr_search_links($islandora_object->id);
 //    $vars['collection_metadata'] = (function_exists('islandora_retrieve_metadata_markup')) ? islandora_retrieve_metadata_markup($islandora_object) : '';
   }
