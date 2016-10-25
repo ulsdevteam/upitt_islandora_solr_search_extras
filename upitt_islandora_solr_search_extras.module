@@ -72,7 +72,7 @@ function upitt_islandora_solr_search_extras_search_specific(AbstractObject $isla
 
 // This will redirect old /islandora/object/{PID} urls for collections to valid collection alias urls if they exist.
 // This also must prevent a redirect-loop from happening by inspecting the actual URL for this object.
-function handle_islandora_view_object($islandora_object) {
+function upitt_islandora_solr_search_extras_islandora_view_object($islandora_object) {
   $url = $_SERVER['REQUEST_URI'];
   // Is a valid path for redirection, and is a collection...
   if (strstr($url, '/islandora/object/') && _is_collection($islandora_object)) {
@@ -794,7 +794,7 @@ function upitt_islandora_solr_search_extras_preprocess_page(&$vars) {
   if (is_array($item)) {
     if (($item['map'][0] == 'user') || ($item['path'] == 'islandora/object/%/from_search/%') || 
       ($item['path'] == 'islandora/object/%/datastream/%/htmledit') ||
-      ($item['path'] == 'islandora/object/%/viewer') || $item['path'] == 'collections') {
+      ($item['path'] == 'islandora/object/%/viewer') || ($item['path'] == 'collections')) {
       // remove sidebar for /user page in case it is there
       $vars['page']['sidebar'] = array();
     }
