@@ -1135,43 +1135,54 @@ function _add_manage_tab($tabs, $islandora_object) {
   if (!islandora_object_access_callback(ISLANDORA_MANAGE_PROPERTIES, $islandora_object)) {
     return $tabs;
   }
-  $primary = array(
-    '#theme' => 'menu_local_task',
-    '#link' => array(
-      'path' => 'islandora/object/%/manage',
-      'load_functions' => array(
-        '2' => 'islandora_object_load'
-      ),
-      'to_arg_functions' => '',
-      'access_callback' => 'islandora_object_manage_access_callback',
-      'access_arguments' => 'a:2:{i:0;a:7:{i:0;s:24:"manage object properties";i:1;s:20:"edit fedora metadata";i:2;s:22:"add fedora datastreams";i:3;s:37:"delete fedora objects and datastreams";i:4;s:21:"ingest fedora objects";i:5;s:24:"manage collection policy";i:6;s:26:"migrate collection members";}i:1;i:2;}',
-      'page_callback' => 'islandora_manage_overview_object',
-      'page_arguments' => 'a:1:{i:0;i:2;}',
-      'delivery_callback' => '',
-      'fit' => '13',
-      'number_parts' => '4',
-      'context' => '1',
-      'tab_parent' => 'islandora/object/%',
-      'tab_root' => 'islandora/object/%',
-      'title' => 'Manage',
-      'title_callback' => 't',
-      'title_arguments' => '',
-      'theme_callback' => '',
-      'theme_arguments' => 'a:0:{}',
-      'type' => '132',
-      'description' => '',
-      'position' => '',
-      'weight' => '0',
-      'include_file' => '',
-      'href' => 'islandora/object/' . $islandora_object->id . '/manage',
-      'tab_root_href' => 'islandora/object/' . $islandora_object->id,
-      'tab_parent_href' => 'islandora/object/' . $islandora_object->id,
-      'options' => array(),
-      'access' => TRUE,
-      'localized_options' => array(),
-    ), // end of #link array
-  );
-  $tabs['#primary'][] = $primary;
+  $manage_tab_exists = FALSE;
+  if (array_key_exists('#primary', $tabs) && is_array($tabs['#primary'])) {
+    foreach ($tabs['#primary'] as $tab) {
+      if (array_key_exists('#link', $tab)) {
+        $manage_tab_exists |= ($tab['#link']['title'] == 'Manage');
+      }
+    }
+  }
+
+  if (!$manage_tab_exists) {
+    $primary = array(
+      '#theme' => 'menu_local_task',
+      '#link' => array(
+        'path' => 'islandora/object/%/manage',
+        'load_functions' => array(
+          '2' => 'islandora_object_load'
+        ),
+        'to_arg_functions' => '',
+        'access_callback' => 'islandora_object_manage_access_callback',
+        'access_arguments' => 'a:2:{i:0;a:7:{i:0;s:24:"manage object properties";i:1;s:20:"edit fedora metadata";i:2;s:22:"add fedora datastreams";i:3;s:37:"delete fedora objects and datastreams";i:4;s:21:"ingest fedora objects";i:5;s:24:"manage collection policy";i:6;s:26:"migrate collection members";}i:1;i:2;}',
+        'page_callback' => 'islandora_manage_overview_object',
+        'page_arguments' => 'a:1:{i:0;i:2;}',
+        'delivery_callback' => '',
+        'fit' => '13',
+        'number_parts' => '4',
+        'context' => '1',
+        'tab_parent' => 'islandora/object/%',
+        'tab_root' => 'islandora/object/%',
+        'title' => 'Manage',
+        'title_callback' => 't',
+        'title_arguments' => '',
+        'theme_callback' => '',
+        'theme_arguments' => 'a:0:{}',
+        'type' => '132',
+        'description' => '',
+        'position' => '',
+        'weight' => '0',
+        'include_file' => '',
+        'href' => 'islandora/object/' . $islandora_object->id . '/manage',
+        'tab_root_href' => 'islandora/object/' . $islandora_object->id,
+        'tab_parent_href' => 'islandora/object/' . $islandora_object->id,
+        'options' => array(),
+        'access' => TRUE,
+        'localized_options' => array(),
+      ), // end of #link array
+    );
+    $tabs['#primary'][] = $primary;
+  }
   return $tabs;
 }
 
