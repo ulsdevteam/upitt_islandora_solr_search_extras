@@ -219,6 +219,9 @@ function upitt_islandora_solr_search_extras_islandora_pageCModel_islandora_solr_
   if (variable_get('upitt_islandora_solr_search_extras_showparent_searchresults') && (array_search('MODS', $search_result['datastreams']) === FALSE) && _can_lookup_MODS($search_result['PID'])) {
     if  (isset($search_result['object_url'])) {
       $parent_solr_doc = _islandora_solr_pid_parent_search($search_result, $solr_fields, $options, $skey, '');
+if (array_key_exists('fgs_label_s', $parent_solr_doc)) {
+   $parent_solr_doc['fgs_label_s'] = '<i>' . $search_result['fgs_label_s'] . '</i>';
+}
       // Keep the existing title value for later.
       $parent_pid = $parent_solr_doc['PID'];
       $search_result['page_solr_doc'] = $search_result['solr_doc'];
@@ -245,6 +248,8 @@ function upitt_islandora_solr_search_extras_islandora_pageCModel_islandora_solr_
  *   Returns the themed solr search results.
  */
 function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_results) {
+ global $_islandora_solr_queryclass;
+ dpm($_islandora_solr_queryclass);
   // The skey value will need to be written into the links for pages as handled by
   // /islandora/object/%islandora_object/from_search/% menu route above.
   module_load_include('inc', 'islandora_solr_search', 'includes/utilities');
@@ -388,6 +393,16 @@ function _get_skey($solr_results) {
     $request_uri = urldecode(str_replace('/islandora/search/', '', $_SERVER['REQUEST_URI']));
     $is_dismax = (strstr($request_uri, '=dismax') <> '');
     @list($search, $junk) = explode('?', $request_uri);
+    // Is there a sort field?
+    $_GET_params = explode("&", str_replace("&amp;", "|", $junk));
+    $sort_field = '';
+    foreach ($_GET_params as $_GET_param) {
+      @list($_GET_varname, $_GET_value) = explode("=", $_GET_param, 2);
+      if ($_GET_varname == 'sort' && !$sort_field) {
+        $sort_field = $_GET_value;
+      }
+    }
+
     $solr_filters = $used_filters = array();
     $indexer = 0;
     if (isset($solr_results['responseHeader']['params']['fq']) && is_array($solr_results['responseHeader']['params']['fq'])) {
@@ -416,11 +431,15 @@ function _get_skey($solr_results) {
     if ($is_dismax && $search) {
       // $solr_filters[] = 'q=catch_all_fields_mt:' . $search;
     }
+    if ($sort_field) {
+      $solr_filters[] = 'sort=' . $sort_field;
+    }
     // Generate the effective search URL conditionally based on whether or not the search is on a collection object, or if search is dismax.
     $solr_url = (($collection_object) ? _format_collection_url($collection_object->label, TRUE) . '/' : '/islandora/search/') . '?islandora_solr_search_navigation=0&' . implode('&', $solr_filters);
     if ($is_dismax) {
       $solr_url = (strstr($solr_url, "?") ? str_replace("?", $search . "?type=dismax&", $solr_url) : $solr_url . '?type=dismax');
     }
+error_log('s = ' . $solr_url);
 
     $skey = db_query('SELECT s.skey FROM {solr_search_sessions} s JOIN {solr_search_skey_results} r ON (r.skey = s.skey) WHERE s.solr_search_url = :u', array(':u' => $solr_url))->fetchField();
     if (!$skey) {
@@ -548,6 +567,15 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
     $request_uri = urldecode(str_replace('/islandora/search/', '', $_SERVER['REQUEST_URI']));
     $is_dismax = (strstr($request_uri, '=dismax') <> '');
     @list($search, $junk) = explode('?', $request_uri);
+    // Is there a sort field?
+    $_GET_params = explode("&", str_replace("&amp;", "|", $junk));
+    $sort_field = '';
+    foreach ($_GET_params as $_GET_param) {
+      @list($_GET_varname, $_GET_value) = explode("=", $_GET_param, 2);
+      if ($_GET_varname == 'sort' && !$sort_field) {
+        $sort_field = $_GET_value;
+      }
+    }
 
     $used_filters = $q_arr = $solr_filters = array();
     $filter_index = 0;
@@ -582,6 +610,9 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
         }
       }
     }
+    if ($sort_field) {
+      $solr_filters[] = 'sort=' . $sort_field;
+    }
     if ($search && $is_dismax) {
       $q = $search;
     }
@@ -608,6 +639,9 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
     'fl' => $fl,
     'fq' => ($is_dismax) ? variable_get('islandora_solr_base_filter', '') : '',
   );
+  if ($sort_field) {
+    $query_processor->internalSolrParams['sort'] = $sort_field;
+  }
 
   if ($is_dismax) {
     _add_dismax_params($query_processor);
@@ -618,6 +652,7 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
   $solr->setCreateDocuments(FALSE);
   try {
     $search_results = $solr->search($query_processor->solrQuery, $query_processor->solrStart, $query_processor->solrLimit, $query_processor->solrParams, 'GET'); 
+dpm($query_processor);
     $tmp = json_decode($search_results->getRawResponse(), TRUE);
     $results = array();
     $numFound = $tmp['response']['numFound'];
@@ -845,7 +880,8 @@ function upitt_islandora_solr_search_extras_preprocess_page(&$vars) {
   if ($islandora_object) {
     $upitt_date = _get_best_date($islandora_object);
     $title = _get_title_with_nonSort($islandora_object);
-    $vars['title'] = $title . (($upitt_date) ? ', ' . $upitt_date : '');
+    $vars['title'] = $title; //  . (($upitt_date) ? ', ' . $upitt_date : '');
+    $vars['upitt_date'] = $upitt_date;
     drupal_set_title($title);
 
     // remove sidebar - except when object is collectionCModel
@@ -901,6 +937,7 @@ function _get_best_date($islandora_object) {
       );
     foreach ($solr_date_fields as $solr_date_field) {
       $date = ($date) ? $date : _get_solr_field_value_special($islandora_object, $solr_date_field, true);
+error_log('solr_date_field = "' . $solr_date_field . '" = ' .  _get_solr_field_value_special($islandora_object, $solr_date_field, true));
     }
   }
   return $date;
