@@ -935,7 +935,6 @@ function _get_best_date($islandora_object) {
       );
     foreach ($solr_date_fields as $solr_date_field) {
       $date = ($date) ? $date : _get_solr_field_value_special($islandora_object, $solr_date_field, true);
-error_log('solr_date_field = "' . $solr_date_field . '" = ' .  _get_solr_field_value_special($islandora_object, $solr_date_field, true));
     }
   }
   return $date;
