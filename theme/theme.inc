@@ -99,7 +99,7 @@ function _get_solr_results($islandora_object, &$variables) {
   // Inspect the islandora_object - if it is a collection model object, then use 
   // RELS_EXT_isMemberOfCollection_uri_ms, else (for a book model), use RELS_EXT_isPageOf_uri_ms
   // for the SOLR query.
-  $match_field = (in_array('islandora:bookCModel', $islandora_object->models)) ? 'RELS_EXT_isPageOf_uri_ms' : 'RELS_EXT_isMemberOfCollection_uri_ms';
+  $match_field = (in_array('islandora:bookCModel', $islandora_object->models) || in_array('islandora:manuscriptCModel', $islandora_object->models)) ? 'RELS_EXT_isPageOf_uri_ms' : 'RELS_EXT_isMemberOfCollection_uri_ms';
   $solr_query = $match_field.':"info:fedora/' . $islandora_object->id . '"';
   $variables['solr_search'] = islandora_solr($solr_query);
 }

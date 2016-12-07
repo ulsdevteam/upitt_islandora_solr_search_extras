@@ -252,6 +252,7 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
   // The skey value will need to be written into the links for pages as handled by
   // /islandora/object/%islandora_object/from_search/% menu route above.
   module_load_include('inc', 'islandora_solr_search', 'includes/utilities');
+  module_load_include('inc', 'upitt_islandora_solr_search_extras', 'includes/utilities');
 
   $skey = _get_skey($solr_results);
 
@@ -286,6 +287,9 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
       $object_results[$k]['solr_doc']['dc.title']['value'] = _inject_skey_to_markup($object_results[$k]['solr_doc']['dc.title']['value'], $object_results[$k]['PID'], $skey . '-' . ($elements['solr_start'] + $k), $object_results[$k]['object_url_fragment']);
     }
     $parent_pid = NULL;
+
+    // Update the default thumbnail URI depending on whether or not it is set for this object.
+    _updateDefaultThumbnail($object_results[$k]);
 
     $object_results[$k]['object_url'] = _inject_skey($object_results[$k]['object_url'], $object_results[$k]['PID'], $skey . '-' . ($elements['solr_start'] + $k));
     if ((isset($object_results[$k]['datastreams']))) {
