@@ -1224,3 +1224,28 @@ function _add_manage_tab($tabs, $islandora_object) {
   return $tabs;
 }
 
+/**
+ * This function is called from the islandora_solution_pack_manuscript via a module_invoke_all call for minimal intrusiveness.  Hooking in to change the actual
+ * page content seems to not be possible because the transform to create the HTML is done after the preprocess call due to the nature of it being a transformation.
+ */
+function ead_highlight_search_terms($content) {
+  // Check the referring page.
+  $from = $_SERVER['HTTP_REFERER'];
+  if ($from && strstr($from, '/islandora/search') ) {
+    // Look at the search page that this came from, and parse the search terms from that uri.
+    @list($junk, $keep) = explode('/islandora/search/', urldecode($from));
+    @list($words, $junk) = explode("?", $keep);
+
+    if ($words) {
+      preg_match_all('~\w+~', $words, $m);
+      if($m) {
+        $re = '~\\b(' . implode('|', $m[0]) . ')\\b~i';
+        return preg_replace($re, '<span class="search-highlight">$0</span>', $content);
+      }
+    }
+  }
+  // else, the code will fall through and simply return what was passed for $content.
+  return $content;
+}
+
+
