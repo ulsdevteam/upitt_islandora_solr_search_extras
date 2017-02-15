@@ -251,7 +251,7 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
  global $_islandora_solr_queryclass;
   // The skey value will need to be written into the links for pages as handled by
   // /islandora/object/%islandora_object/from_search/% menu route above.
-  module_load_include('inc', 'islandora_solr_search', 'includes/utilities');
+  module_load_include('inc', 'islandora_solr', 'includes/utilities');
   module_load_include('inc', 'upitt_islandora_solr_search_extras', 'includes/utilities');
 
   $skey = _get_skey($solr_results);
@@ -629,7 +629,7 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
     }
   }
   $fl = 'PID,fgs_label_s';
-  module_load_include('inc', 'islandora_solr_search', 'includes/utilities');
+  module_load_include('inc', 'islandora_solr', 'includes/utilities');
   $query_processor = new IslandoraSolrQueryProcessor();
   $query_processor->solrQuery = $q;
   // Calculate the offset by the current page of search results by looking for
