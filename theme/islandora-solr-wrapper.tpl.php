@@ -27,7 +27,10 @@
     if ($is_first_page && $is_collection) {
       $block = block_load('islandora_datastream_blocks', 'idb-DESC');
       $renderable_block = _block_get_renderable_array(_block_render_blocks(array($block)));
-      print $renderable_block['islandora_datastream_blocks_idb-DESC']['#markup'];
+dpm($rednerable_block);
+      if (array_key_exists('islandora_datastream_blocks_idb-DESC', $renderable_block)) {
+        print $renderable_block['islandora_datastream_blocks_idb-DESC']['#markup'];
+      }
     }
   ?>
 
