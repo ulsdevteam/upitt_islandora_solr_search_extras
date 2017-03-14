@@ -442,7 +442,6 @@ function _get_skey($solr_results) {
     if ($is_dismax) {
       $solr_url = (strstr($solr_url, "?") ? str_replace("?", $search . "?type=dismax&", $solr_url) : $solr_url . '?type=dismax');
     }
-error_log('s = ' . $solr_url);
 
     $skey = db_query('SELECT s.skey FROM {solr_search_sessions} s JOIN {solr_search_skey_results} r ON (r.skey = s.skey) WHERE s.solr_search_url = :u', array(':u' => $solr_url))->fetchField();
     if (!$skey) {
@@ -918,7 +917,18 @@ function upitt_islandora_solr_search_extras_preprocess_page(&$vars) {
  */
 function _get_title_with_nonSort($islandora_object) {
   $nonSort = _get_solr_field_value_special($islandora_object, 'mods_titleInfo_nonSort_s', FALSE);
-  return (($nonSort) ? $nonSort . ' ' : '') . rtrim(rtrim(rtrim(ucfirst($islandora_object->label), ') '), ')'), ',');
+
+/*
+  // MAYBE need to do this - if the value in the parenthesis has more than two digits, then chop it all off down to the opening parenthesis
+  preg_match_all('/\(([A-Za-z0-9 ]+?)\)/', $islandora_object->label, $out);
+  // Prevent this from potentially logging a warning by using "@".
+  $matches = @$out[1];
+  $in_parenthesis = is_array($matches) ? $matches[count($matches) - 1] : '';
+*/
+
+//  return (($nonSort) ? $nonSort . ' ' : '') . rtrim(rtrim(rtrim(ucfirst($islandora_object->label), ') '), ')'), ',');
+
+  return (($nonSort) ? $nonSort . ' ' : '') . rtrim(ucfirst($islandora_object->label), ',');
 }
 
 /**
