@@ -942,10 +942,12 @@ function _get_best_date($islandora_object) {
     $date = _get_solr_field_value_special($islandora_object, 'mods_originInfo_type_display_dateOther_s', true);
   }
   else {
-    $solr_date_fields = array('dc.date',
+    $solr_date_fields = array('mods_originInfo_type_display_dateOther_s',
+                              'dc.date',
                               'mods_originInfo_dateOther_ms',
                               'mods_originInfo_encoding_iso8601_keyDate_yes_dateIssued_s',
-                              'mods_originInfo_type_display_dateOther_s',
+                        // Moved this to first in list:
+                        //    'mods_originInfo_type_display_dateOther_s',
       );
     foreach ($solr_date_fields as $solr_date_field) {
       $date = ($date) ? $date : _get_solr_field_value_special($islandora_object, $solr_date_field, true);
