@@ -1246,18 +1246,17 @@ function ead_highlight_search_terms($content) {
   if ($from && strstr($from, '/islandora/search') ) {
     // Look at the search page that this came from, and parse the search terms from that uri.
     @list($junk, $keep) = explode('/islandora/search/', urldecode($from));
-    @list($words, $junk) = explode("?", $keep);
+    @list($words_string, $junk) = explode("?", $keep); 
 
-    if ($words) {
-      preg_match_all('~\w+~', $words, $m);
-      if($m) {
-        $re = '~\\b(' . implode('|', $m[0]) . ')\\b~i';
-        return preg_replace($re, '<span class="search-highlight">$0</span>', $content);
+    if ($words_string <> '') {
+      module_load_include('inc', 'upitt_islandora_solr_search_extras', 'includes/search_highlighting');
+      $words = explode(" ", $words_string);
+      foreach ($words as $word) {
+        $content = upitt_islandora_solr_search_extras_str_highlight($content, $word);
       }
+      return $content;
     }
   }
   // else, the code will fall through and simply return what was passed for $content.
   return $content;
 }
-
-
