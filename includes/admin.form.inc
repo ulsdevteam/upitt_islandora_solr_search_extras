@@ -74,7 +74,7 @@ function upitt_islandora_solr_search_extras_admin_settings_submit(array $form, a
 
 function _map_url_alias_for_collection_pages() {
   // run a Solr search to get all collection labels
-  module_load_include('inc', 'islandora_solr_search', 'includes/utilities');
+  module_load_include('inc', 'islandora_solr', 'includes/utilities');
   $query_processor = new IslandoraSolrQueryProcessor();
   $query_processor->solrQuery = 'RELS_EXT_hasModel_uri_ms:info\:fedora\/islandora\:collectionCModel AND PID:pitt\:* AND -fgl_label_s:["" TO *]';
   $query_processor->solrStart = 0;
