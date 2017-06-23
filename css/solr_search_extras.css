@@ -15,7 +15,7 @@
 }
 
 .islandora-basic-collection #sidebar, #two-col-right-main #sidebar {
-  width: 25% !important;
+  width: 25%;
   float: left !important;
 }
 
@@ -25,7 +25,7 @@
 }
 
 #sidebar .region-sidebar {
-  width: 95% !important;
+  width: 95%;
   margin: 0 !important;
   padding-left: 2px;
 }
