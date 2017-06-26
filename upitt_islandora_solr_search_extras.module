@@ -283,8 +283,8 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
   //   * Link any of the page object fields that were added by lookup
   foreach ($object_results as $k=>$solr_result_object) {
     // process this later
-    if (isset($object_results[$k]['solr_doc']['dc.title']) && isset($object_results[$k]['solr_doc']['dc.title']['value'])) {
-      $object_results[$k]['solr_doc']['dc.title']['value'] = _inject_skey_to_markup($object_results[$k]['solr_doc']['dc.title']['value'], $object_results[$k]['PID'], $skey . '-' . ($elements['solr_start'] + $k), $object_results[$k]['object_url_fragment']);
+    if (isset($object_results[$k]['solr_doc']['dc.title']) && isset($object_results[$k]['solr_doc']['dc.title']['value']) && isset($object_results[$k]['object_url_fragment'])) {
+      $object_results[$k]['solr_doc']['dc.title']['value'] = upitt_islandora_solr_search_extras_inject_skey_to_markup($object_results[$k]['solr_doc']['dc.title']['value'], $object_results[$k]['PID'], $skey . '-' . ($elements['solr_start'] + $k), $object_results[$k]['object_url_fragment']);
     }
     $parent_pid = NULL;
 
@@ -487,7 +487,7 @@ function _format_collection_url($fedora_label, $alias = FALSE) {
   return ($fedora_label) ? (($alias) ? 'collection/' : '/search_collection/') . str_replace($strip_chars, '', urldecode(str_replace("+", "-", urlencode(str_replace($strip_words, " ", strtolower(trim($fedora_label))))))) : '';
 }
 
-function _inject_skey_to_markup($markup, $PID, $skey, $fragment) {
+function upitt_islandora_solr_search_extras_inject_skey_to_markup($markup, $PID, $skey, $fragment) {
   // Since these solr results are also rendered on a collection page, only inject if result is for the search page!
   if (!$skey) {
     return $markup;
