@@ -276,7 +276,6 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
   $elements['solr_total'] = $solr_results['response']['numFound'];
   $elements['solr_start'] = $solr_results['response']['start'];
 
-
   // This loop will do the post-processing to perform the following tasks:
   // 
   //   * Add the page_number element if needed
@@ -285,6 +284,9 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
     // process this later
     if (isset($object_results[$k]['solr_doc']['dc.title']) && isset($object_results[$k]['solr_doc']['dc.title']['value']) && isset($object_results[$k]['object_url_fragment'])) {
       $object_results[$k]['solr_doc']['dc.title']['value'] = upitt_islandora_solr_search_extras_inject_skey_to_markup($object_results[$k]['solr_doc']['dc.title']['value'], $object_results[$k]['PID'], $skey . '-' . ($elements['solr_start'] + $k), $object_results[$k]['object_url_fragment']);
+    }
+    elseif (isset($object_results[$k]['solr_doc']['dc.title']) && isset($object_results[$k]['solr_doc']['dc.title']['value'])) {
+      $object_results[$k]['solr_doc']['dc.title']['value'] = upitt_islandora_solr_search_extras_inject_skey_to_markup($object_results[$k]['solr_doc']['dc.title']['value'], $object_results[$k]['PID'], $skey . '-' . ($elements['solr_start'] + $k), '');
     }
     $parent_pid = NULL;
 
@@ -333,7 +335,7 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
           unset($parent_solr_doc['PID']);
           $object_results[$k]['solr_doc'] = $parent_solr_doc;
         }
-      }
+      }   
     }
     // 1. Add the page number if applicable
     if ((stristr($object_results[$k]['content_models'][0], 'pageCModel') == 'pageCModel') &&
