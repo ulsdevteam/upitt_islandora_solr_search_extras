@@ -881,10 +881,8 @@ function upitt_islandora_solr_search_extras_preprocess_page(&$vars) {
 //    $vars['collection_metadata'] = (function_exists('islandora_retrieve_metadata_markup')) ? islandora_retrieve_metadata_markup($islandora_object) : '';
   }
   if ($islandora_object) {
-    $upitt_date = _get_best_date($islandora_object);
     $title = _get_title_with_nonSort($islandora_object);
-    $vars['title'] = $title; //  . (($upitt_date) ? ', ' . $upitt_date : '');
-    $vars['upitt_date'] = $upitt_date;
+    $vars['title'] = $title;
     drupal_set_title($title);
 
     // remove sidebar - except when object is collectionCModel
@@ -937,7 +935,7 @@ function _get_title_with_nonSort($islandora_object) {
  * Helper function to get the best date value to display for a collection or an object.
  * This date value is merged with the <h1> title.
  */
-function _get_best_date($islandora_object) {
+function upitt_islandora_solr_search_extras_get_best_date($islandora_object) {
   $date = '';
   // For a collection, use the mods_originInfo_type_display_dateOther_s date field.
   if (_is_collection($islandora_object)) {
