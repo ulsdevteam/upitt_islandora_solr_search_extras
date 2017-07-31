@@ -734,7 +734,7 @@ function _get_solr_field_value_special($islandora_object, $field, $single_result
   $query_processor->solrStart = 0;
   $query_processor->solrLimit = 1;
   $query_processor->solrParams = array(
-    'fl' => $field,
+    'fl' => $field . ',PID',
     'fq' => '',
   );
   $query_processor->executeQuery(FALSE);
