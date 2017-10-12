@@ -219,9 +219,9 @@ function upitt_islandora_solr_search_extras_islandora_pageCModel_islandora_solr_
   if (variable_get('upitt_islandora_solr_search_extras_showparent_searchresults') && (array_search('MODS', $search_result['datastreams']) === FALSE) && _can_lookup_MODS($search_result['PID'])) {
     if  (isset($search_result['object_url'])) {
       $parent_solr_doc = _islandora_solr_pid_parent_search($search_result, $solr_fields, $options, $skey, '');
-if (array_key_exists('fgs_label_s', $parent_solr_doc)) {
-   $parent_solr_doc['fgs_label_s'] = '<i>' . $search_result['fgs_label_s'] . '</i>';
-}
+      if (array_key_exists('fgs_label_s', $parent_solr_doc)) {
+        $parent_solr_doc['fgs_label_s'] = '<i>' . $search_result['fgs_label_s'] . '</i>';
+      }
       // Keep the existing title value for later.
       $parent_pid = $parent_solr_doc['PID'];
       $search_result['page_solr_doc'] = $search_result['solr_doc'];
@@ -312,10 +312,12 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
         if (isset($object_results[$k]['object_url_fragment'])) {
           // UNTIL the updated correct HOCR datatreams are in the system, disable the fragment here
           // $options['fragment'] = '';
-          $options['fragment'] = $object_results[$k]['object_url_fragment'];
+          $search_term_catch_all_fields = upitt_islandora_solr_search_extras_get_catch_all_fields_of_current_search();
+          $options['fragment'] = $object_results[$k]['object_url_fragment'] . (($search_term_catch_all_fields) ? '/search/' . $search_term_catch_all_fields : '');
         }
 
         $object_results[$k]['thumbnail'] = l($image, $object_results[$k]['object_url'], $options);
+        dpm($options);
       }
       else {
         $object_results[$k]['thumbnail'] = $object_results[$k]['page_thumbnail'];
@@ -509,6 +511,21 @@ function _inject_skey($url, $PID, $skey) {
   }
   @list($pre, $post) = explode("#", $url);
   return $pre . '/from_search/' . $skey . $post;
+}
+
+
+function upitt_islandora_solr_search_extras_get_catch_all_fields_of_current_search() {
+  $search_url = (isset($_GET['q']) ? str_replace('islandora/search_collection/', '', $_GET['q']): NULL);
+  @list($search, $junk) = explode("?", $search_url);
+  $search = str_replace('islandora/search/', '', $search);
+  $parts = explode("&", urldecode($search));
+  $catch_all_term = '';
+  foreach ($parts as $part) {
+    if (strstr($part, "catch_all_fields_mt:")) {
+      $catch_all_term = str_replace(array("catch_all_fields_mt:", ")", "(", '"', " "), array("","","","","+"), $part);
+    }
+  }
+  return $catch_all_term;
 }
 
 /**
@@ -1165,6 +1182,8 @@ function _can_lookup_MODS($pid) {
  * the collection as the fragment (because the collection is represented by a search for items in that collection).
  */
 function upitt_islandora_solr_search_extras_islandora_solr_results_alter(&$search_results, $query_processor) {
+  // TODO: only do this if the object is a colletion model object.
+  return;
   foreach ($search_results as $k => $result) {
     if (isset($result['object_url_fragment'])) {
       $search_results[$k]['object_url_fragment'] = _fix_fragment_searchterms_only($result['object_url_fragment'], $query_processor);
@@ -1177,6 +1196,8 @@ function _fix_fragment_searchterms_only($fragment, $query_processor) {
     return $fragment;
   }
   else {
+    return $fragment;
+    // what was I thinking here?
     return '';
   }
 }
