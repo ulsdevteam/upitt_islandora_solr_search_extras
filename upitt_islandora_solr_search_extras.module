@@ -281,13 +281,6 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
   //   * Add the page_number element if needed
   //   * Link any of the page object fields that were added by lookup
   foreach ($object_results as $k=>$solr_result_object) {
-    // process this later
-    if (isset($object_results[$k]['solr_doc']['dc.title']) && isset($object_results[$k]['solr_doc']['dc.title']['value']) && isset($object_results[$k]['object_url_fragment'])) {
-      $object_results[$k]['solr_doc']['dc.title']['value'] = upitt_islandora_solr_search_extras_inject_skey_to_markup($object_results[$k]['solr_doc']['dc.title']['value'], $object_results[$k]['PID'], $skey . '-' . ($elements['solr_start'] + $k), $object_results[$k]['object_url_fragment']);
-    }
-    elseif (isset($object_results[$k]['solr_doc']['dc.title']) && isset($object_results[$k]['solr_doc']['dc.title']['value'])) {
-      $object_results[$k]['solr_doc']['dc.title']['value'] = upitt_islandora_solr_search_extras_inject_skey_to_markup($object_results[$k]['solr_doc']['dc.title']['value'], $object_results[$k]['PID'], $skey . '-' . ($elements['solr_start'] + $k), '');
-    }
     $parent_pid = NULL;
 
     // Update the default thumbnail URI depending on whether or not it is set for this object.
@@ -312,12 +305,11 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
         if (isset($object_results[$k]['object_url_fragment'])) {
           // UNTIL the updated correct HOCR datatreams are in the system, disable the fragment here
           // $options['fragment'] = '';
-          $search_term_catch_all_fields = upitt_islandora_solr_search_extras_get_catch_all_fields_of_current_search();
-          $options['fragment'] = $object_results[$k]['object_url_fragment'] . (($search_term_catch_all_fields) ? '/search/' . $search_term_catch_all_fields : '');
+          $options['fragment'] = upitt_islandora_solr_search_extras_fix_fragment_using_catch_all_fields_of_current_search($object_results[$k]['object_url_fragment']);
+          $object_results[$k]['object_url_fragment'] = $options['fragment'];
         }
 
         $object_results[$k]['thumbnail'] = l($image, $object_results[$k]['object_url'], $options);
-        dpm($options);
       }
       else {
         $object_results[$k]['thumbnail'] = $object_results[$k]['page_thumbnail'];
@@ -339,6 +331,14 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
         }
       }   
     }
+
+    if (isset($object_results[$k]['solr_doc']['dc.title']) && isset($object_results[$k]['solr_doc']['dc.title']['value']) && isset($object_results[$k]['object_url_fragment'])) {
+      $object_results[$k]['solr_doc']['dc.title']['value'] = upitt_islandora_solr_search_extras_inject_skey_to_markup($object_results[$k]['solr_doc']['dc.title']['value'], $object_results[$k]['PID'], $skey . '-' . ($elements['solr_start'] + $k), $object_results[$k]['object_url_fragment']);
+    }
+    elseif (isset($object_results[$k]['solr_doc']['dc.title']) && isset($object_results[$k]['solr_doc']['dc.title']['value'])) {
+      $object_results[$k]['solr_doc']['dc.title']['value'] = upitt_islandora_solr_search_extras_inject_skey_to_markup($object_results[$k]['solr_doc']['dc.title']['value'], $object_results[$k]['PID'], $skey . '-' . ($elements['solr_start'] + $k), '');
+    }
+
     // 1. Add the page number if applicable
     if ((stristr($object_results[$k]['content_models'][0], 'pageCModel') == 'pageCModel') &&
       (substr($object_results[$k]['object_label'], 0, 5) == 'Page ')) {
@@ -513,8 +513,7 @@ function _inject_skey($url, $PID, $skey) {
   return $pre . '/from_search/' . $skey . $post;
 }
 
-
-function upitt_islandora_solr_search_extras_get_catch_all_fields_of_current_search() {
+function upitt_islandora_solr_search_extras_fix_fragment_using_catch_all_fields_of_current_search($object_url_fragment) {
   $search_url = (isset($_GET['q']) ? str_replace('islandora/search_collection/', '', $_GET['q']): NULL);
   @list($search, $junk) = explode("?", $search_url);
   $search = str_replace('islandora/search/', '', $search);
@@ -525,7 +524,11 @@ function upitt_islandora_solr_search_extras_get_catch_all_fields_of_current_sear
       $catch_all_term = str_replace(array("catch_all_fields_mt:", ")", "(", '"', " "), array("","","","","+"), $part);
     }
   }
-  return $catch_all_term;
+
+  if (strstr($object_url_fragment, "/search/")) {
+    @list($object_url_fragment, $junk) = explode("/search/", $object_url_fragment);
+  }
+  return $object_url_fragment . (($catch_all_term) ? '/search/' . $catch_all_term : '');
 }
 
 /**
