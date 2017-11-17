@@ -299,9 +299,16 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
         if (isset($object_results[$k]['object_label'])) {
           $options['attributes']['title'] = $object_results[$k]['object_label'];
         }
-        if (isset($object_results[$k]['object_url_params'])) {
-          $options['query'] = $object_results[$k]['object_url_params'];
+        if (isset($object_results[$k]['object_url_params']) && $object_results[$k]['object_url_params']) {
+          $tmp = $object_results[$k]['object_url_params'];
+          if (isset($tmp['solr']) && isset($tmp['solr']['params'])) {
+            unset($tmp['solr']['params']);
+            $options['query'] = '';
+          } else {
+            $options['query'] = $tmp;
+          }
         }
+
         if (isset($object_results[$k]['object_url_fragment'])) {
           // UNTIL the updated correct HOCR datatreams are in the system, disable the fragment here
           // $options['fragment'] = '';
@@ -315,7 +322,13 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
         $object_results[$k]['thumbnail'] = $object_results[$k]['page_thumbnail'];
         $object_results[$k]['page_thumbnail'] = '';
       }
-      if (variable_get('upitt_islandora_solr_search_extras_showparent_searchresults') && (array_search('MODS', $object_results[$k]['datastreams']) === FALSE) && _can_lookup_MODS($object_results[$k]['PID'])) {
+
+      $is_newspaper_page = (stristr($object_results[$k]['content_models'][0], 'newspaperPageCModel') == 'newspaperPageCModel');
+
+      $mods_condition = ($is_newspaper_page) ? TRUE :
+           (array_search('MODS', $object_results[$k]['datastreams']) === FALSE);
+      if (variable_get('upitt_islandora_solr_search_extras_showparent_searchresults') && _can_lookup_MODS($object_results[$k]['PID']) && $mods_condition) {
+// && (array_search('MODS', $object_results[$k]['datastreams']) === FALSE) && _can_lookup_MODS($object_results[$k]['PID'])) {
         // this logic might not matter since _can_lookup_MODS limits this to only page objects
         /* if (((!(isset($object_results[$k]['solr_doc']['RELS_EXT_isMemberOfCollection_uri_ms']))) ||
              (!(isset($object_results[$k]['solr_doc']['RELS_EXT_isPageOf_uri_ms']))) ||
@@ -325,7 +338,9 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
           $parent_solr_doc = _islandora_solr_pid_parent_search($object_results[$k], $solr_fields, $options, $skey, '');
           // Keep the existing title value for later.
           $parent_pid = $parent_solr_doc['PID'];
-          $object_results[$k]['page_solr_doc'] = $object_results[$k]['solr_doc'];
+          // BGG - pretty sure we do not want this previous value from solr_doc:
+          // $object_results[$k]['page_solr_doc'] = $object_results[$k]['solr_doc'];
+          $object_results[$k]['page_solr_doc'] = array(); 
           unset($parent_solr_doc['PID']);
           $object_results[$k]['solr_doc'] = $parent_solr_doc;
         }
@@ -348,6 +363,15 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
       $page_number = str_replace("Page ", "", $keep);
       if (is_numeric($page_number)) {
         $object_results[$k]['solr_doc']['page_number'] = array('value' => 'Page: ' . $page_number, 'label' => 'Page #', 'class' => '' );
+      }
+    }
+    elseif ($is_newspaper_page) {
+      // Newspaper page objects do NOT have an object_label value like "Page 24"....
+      $object_label = $object_results[$k]['object_label'];
+      @list($pid, $seq) = explode("-", $object_label);
+      $seq = ltrim($seq, '0');
+      if (is_numeric($seq)) {
+        $object_results[$k]['solr_doc']['page_number'] = array('value' => 'Page: ' . $seq, 'label' => 'Page #', 'class' => '' );
       }
     }
 
@@ -1171,7 +1195,8 @@ function _can_lookup_MODS($pid) {
   $islandora_object = islandora_object_load($pid);
   $answer = FALSE;
   if (is_object($islandora_object)) {
-    if (!(array_search('islandora:pageCModel', $islandora_object->models) === FALSE)) {
+    if (!(array_search('islandora:pageCModel', $islandora_object->models) === FALSE) || !(array_search('islandora:newspaperPageCModel', $islandora_object->models) === FALSE) ||
+                !(array_search('islandora:manuscriptPageCModel', $islandora_object->models) === FALSE)) {
       $answer = TRUE;
     }
   }
