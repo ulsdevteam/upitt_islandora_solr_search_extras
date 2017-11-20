@@ -248,7 +248,8 @@ function upitt_islandora_solr_search_extras_islandora_pageCModel_islandora_solr_
  *   Returns the themed solr search results.
  */
 function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_results) {
- global $_islandora_solr_queryclass;
+  global $_islandora_solr_queryclass;
+
   // The skey value will need to be written into the links for pages as handled by
   // /islandora/object/%islandora_object/from_search/% menu route above.
   module_load_include('inc', 'islandora_solr', 'includes/utilities');
@@ -261,16 +262,59 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
 //  error_log('collections = ' . print_r($collections, true));
 
   $solr_fields = _get_solr_settings_fields();
-  $solr_results = islandora_solr_prepare_solr_results($solr_results); 
-
-  $object_results = $solr_results['response']['objects'];
-  $object_results = islandora_solr_prepare_solr_doc($object_results); 
-
   // Get the field labels from the current instance of solr_results
   $field_labels = array();
   foreach ($solr_fields as $key => $value) {
     $field_labels[$key] = (is_array($value) ? $value['label'] : $value);
   }
+
+  if (isset($solr_results['response']['objects'])) {
+    foreach ($solr_results['response']['objects'] as $k => $object) {
+      $options = array('html' => TRUE);
+      if (isset($object['object_label'])) {
+        $options['attributes']['title'] = $object['object_label'];
+      }
+      if (isset($object['object_url_params']) && $object['object_url_params']) {
+        $tmp = $object['object_url_params'];
+        if (isset($tmp['solr']) && isset($tmp['solr']['params'])) {
+          unset($tmp['solr']['params']);
+          $options['query'] = '';
+        } else {
+          $options['query'] = $tmp;
+        }
+      }
+/*
+      if (isset($object['object_url_fragment'])) {
+        // UNTIL the updated correct HOCR datatreams are in the system, disable the fragment here
+        // $options['fragment'] = '';
+        $options['fragment'] = upitt_islandora_solr_search_extras_fix_fragment_using_catch_all_fields_of_current_search($object['object_url_fragment']);
+        $solr_results['response']['objects'][$k]['object_url_fragment'] = $options['fragment'];
+      }
+*/
+
+      $is_newspaper_page = (stristr($solr_results['response']['objects'][$k]['content_models'][0], 'newspaperPageCModel') == 'newspaperPageCModel');
+      $mods_condition = ($is_newspaper_page) ? TRUE :
+           (array_search('MODS', $object['datastreams']) === FALSE);
+      if (variable_get('upitt_islandora_solr_search_extras_showparent_searchresults') && _can_lookup_MODS($object['PID']) && $mods_condition) {
+        // this logic might not matter since _can_lookup_MODS limits this to only page objects
+        if  (isset($object['object_url'])) {
+          $parent_solr_doc = _islandora_solr_pid_parent_search($object, $solr_fields, $options, $skey, '');
+          // Keep the existing title value for later.
+          $parent_pid = $parent_solr_doc['PID'];
+          // BGG - pretty sure we do not want this previous value from solr_doc:
+          // $object['page_solr_doc'] = $object[$k]['solr_doc'];
+          unset($parent_solr_doc['PID']);
+          $solr_results['response']['objects'][$k]['solr_doc'] = $parent_solr_doc;
+        }
+      }
+    }
+  }
+
+
+  $solr_results = islandora_solr_prepare_solr_results($solr_results); 
+
+  $object_results = $solr_results['response']['objects'];
+  $object_results = islandora_solr_prepare_solr_doc($object_results); 
 
   $elements = array();
   $elements['solr_total'] = $solr_results['response']['numFound'];
@@ -323,8 +367,7 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
         $object_results[$k]['page_thumbnail'] = '';
       }
 
-      $is_newspaper_page = (stristr($object_results[$k]['content_models'][0], 'newspaperPageCModel') == 'newspaperPageCModel');
-
+/*      $is_newspaper_page = (stristr($object_results[$k]['content_models'][0], 'newspaperPageCModel') == 'newspaperPageCModel');
       $mods_condition = ($is_newspaper_page) ? TRUE :
            (array_search('MODS', $object_results[$k]['datastreams']) === FALSE);
       if (variable_get('upitt_islandora_solr_search_extras_showparent_searchresults') && _can_lookup_MODS($object_results[$k]['PID']) && $mods_condition) {
@@ -334,17 +377,19 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
              (!(isset($object_results[$k]['solr_doc']['RELS_EXT_isPageOf_uri_ms']))) ||
              (!(isset($object_results[$k]['solr_doc']['RELS_EXT_isMemberOf_uri_ms'])))) &&
             (isset($object_results[$k]['object_url']))) { */
+/*
         if  (isset($object_results[$k]['object_url'])) {
           $parent_solr_doc = _islandora_solr_pid_parent_search($object_results[$k], $solr_fields, $options, $skey, '');
           // Keep the existing title value for later.
           $parent_pid = $parent_solr_doc['PID'];
           // BGG - pretty sure we do not want this previous value from solr_doc:
           // $object_results[$k]['page_solr_doc'] = $object_results[$k]['solr_doc'];
-          $object_results[$k]['page_solr_doc'] = array(); 
+          $object_results[$k]['page_solr_doc'] = $object_results[$k]['solr_doc']; // array(); 
           unset($parent_solr_doc['PID']);
           $object_results[$k]['solr_doc'] = $parent_solr_doc;
         }
-      }   
+      }
+*/
     }
 
     if (isset($object_results[$k]['solr_doc']['dc.title']) && isset($object_results[$k]['solr_doc']['dc.title']['value']) && isset($object_results[$k]['object_url_fragment'])) {
@@ -843,27 +888,30 @@ function _islandora_solr_pid_parent_search($child_object, $solr_fields, $options
         $found = false;
         foreach ($tmp['response']['docs'] as $match_result) {
           if (array_key_exists($key, $match_result)) {
-            $found = (is_array($match_result[$key])) ? $match_result[$key][0] : $match_result[$key];
+            $found = (is_array($match_result[$key])) ? array($match_result[$key][0]) : $match_result[$key];
           }
         }
         if ($found) {
           $added_fields[] = $key;
-          $results[$key] = array('label' => $solr_fields[$key]['label'],
-                                 'class' => $solr_fields[$key]['class'],
-                                 'value' => $found);
+          foreach ($found as $v) {
+            $results[$key][] = $v;
+          }
         }
       }
+
       foreach ($tmp['response']['docs'] as $trip) {
         $keys = array_keys($trip);
         foreach ($keys as $key) {
           if (!array_search($key, $added_fields)) {
-            $value = is_array($trip[$key]) ? $trip[$key][0] : $trip[$key];
-            $results[$key] = array('label' => $solr_fields[$key]['label'],
-                                   'class' => $solr_fields[$key]['class'],
-                                   'value' => $value);
+            $value = is_array($trip[$key]) ? array($trip[$key][0]) : $trip[$key];
+            foreach ($value as $v) {
+              $results[$key][] = $v;
+            }
           }
         }
       }
+
+    if (!is_array($options)) { $options = array(); }
       if (isset($results['dc.title']['value']) && $child_object) {
         $results['dc.title']['value'] = l($results['dc.title']['value'], $child_object['object_url'], $options);
       }
@@ -1196,7 +1244,7 @@ function _can_lookup_MODS($pid) {
   $answer = FALSE;
   if (is_object($islandora_object)) {
     if (!(array_search('islandora:pageCModel', $islandora_object->models) === FALSE) || !(array_search('islandora:newspaperPageCModel', $islandora_object->models) === FALSE) ||
-                !(array_search('islandora:manuscriptPageCModel', $islandora_object->models) === FALSE)) {
+        !(array_search('islandora:manuscriptPageCModel', $islandora_object->models) === FALSE)) {
       $answer = TRUE;
     }
   }
