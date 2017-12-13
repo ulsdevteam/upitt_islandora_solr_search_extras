@@ -332,6 +332,8 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
 
     $object_results[$k]['object_url'] = _inject_skey($object_results[$k]['object_url'], $object_results[$k]['PID'], $skey . '-' . ($elements['solr_start'] + $k));
     if ((isset($object_results[$k]['datastreams']))) {
+      $link_options = NULL;
+      $link_title_path = '';
       $object_results[$k]['page_solr_doc'] = array();
       $object_results[$k]['thumbnail'] = $object_results[$k]['page_thumbnail'] = '';
 
@@ -360,7 +362,9 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
           $object_results[$k]['object_url_fragment'] = $options['fragment'];
         }
 
-        $object_results[$k]['thumbnail'] = l($image, $object_results[$k]['object_url'], $options);
+        $link_options = $options;
+        $link_title_path = $object_results[$k]['object_url'];
+        $object_results[$k]['thumbnail'] = l($image, $link_title_path, $link_options);
       }
       else {
         $object_results[$k]['thumbnail'] = $object_results[$k]['page_thumbnail'];
@@ -392,11 +396,15 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
 */
     }
 
+    // Set title link depending on what got set for the thumbnail
+    if (count($link_options) > 0) {
+      $object_results[$k]['solr_doc']['dc.title']['value'] = l(strip_tags($object_results[$k]['solr_doc']['dc.title']['value']), $link_title_path, $link_options);
+    }
     if (isset($object_results[$k]['solr_doc']['dc.title']) && isset($object_results[$k]['solr_doc']['dc.title']['value']) && isset($object_results[$k]['object_url_fragment'])) {
-      $object_results[$k]['solr_doc']['dc.title']['value'] = upitt_islandora_solr_search_extras_inject_skey_to_markup($object_results[$k]['solr_doc']['dc.title']['value'], $object_results[$k]['PID'], $skey . '-' . ($elements['solr_start'] + $k), $object_results[$k]['object_url_fragment']);
+      $object_results[$k]['solr_doc']['dc.title']['value'] = upitt_islandora_solr_search_extras_inject_skey_to_markup($link_title_path, $object_results[$k]['solr_doc']['dc.title']['value'], $object_results[$k]['PID'], $skey . '-' . ($elements['solr_start'] + $k), $object_results[$k]['object_url_fragment']);
     }
     elseif (isset($object_results[$k]['solr_doc']['dc.title']) && isset($object_results[$k]['solr_doc']['dc.title']['value'])) {
-      $object_results[$k]['solr_doc']['dc.title']['value'] = upitt_islandora_solr_search_extras_inject_skey_to_markup($object_results[$k]['solr_doc']['dc.title']['value'], $object_results[$k]['PID'], $skey . '-' . ($elements['solr_start'] + $k), '');
+      $object_results[$k]['solr_doc']['dc.title']['value'] = upitt_islandora_solr_search_extras_inject_skey_to_markup($link_title_path, $object_results[$k]['solr_doc']['dc.title']['value'], $object_results[$k]['PID'], $skey . '-' . ($elements['solr_start'] + $k), '');
     }
 
     // 1. Add the page number if applicable
@@ -441,7 +449,6 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
   }
 
   $object_results = $solr_results['response']['objects'];
-
   // Return themed search results.
   return theme('islandora_solr_extras', array('results' => $object_results, 'elements' => $elements));
 }
@@ -467,7 +474,7 @@ function _get_skey($solr_results) {
   }
   if (!$skey) {
     $request_uri = urldecode(str_replace('/islandora/search/', '', $_SERVER['REQUEST_URI']));
-    $is_dismax = (strstr($request_uri, '=dismax') <> '');
+    $is_dismax = (strstr($request_uri, '=dismax') <> '') || (strstr($request_uri, 'catch_all_fields_mt') <> '');
     @list($search, $junk) = explode('?', $request_uri);
     // Is there a sort field?
     $_GET_params = explode("&", str_replace("&amp;", "|", $junk));
@@ -560,14 +567,22 @@ function _format_collection_url($fedora_label, $alias = FALSE) {
   return ($fedora_label) ? (($alias) ? 'collection/' : '/search_collection/') . str_replace($strip_chars, '', urldecode(str_replace("+", "-", urlencode(str_replace($strip_words, " ", strtolower(trim($fedora_label))))))) : '';
 }
 
-function upitt_islandora_solr_search_extras_inject_skey_to_markup($markup, $PID, $skey, $fragment) {
+function upitt_islandora_solr_search_extras_inject_skey_to_markup($link_title_path, $markup, $PID, $skey, $fragment) {
   // Since these solr results are also rendered on a collection page, only inject if result is for the search page!
   if (!$skey) {
     return $markup;
   }
+  if ($link_title_path <> '') {
+    @list($pre_from_search, $junk) = explode("/from_search/", $link_title_path);
+    $prefix_url = '/' . $pre_from_search; 
+  }
+  else {
+    $prefix_url = '/islandora/object/' . urlencode($PID);
+  }
+
   preg_match('/^<a.*?href=(["\'])(.*?)\1.*$/', $markup, $m);
-  return str_replace(array('/islandora/object/' . urlencode($PID) . '/from_search/', $m[2]),
-                     array('', '/islandora/object/' . urlencode($PID) . '/from_search/' . $skey . ((isset($fragment) && ($fragment <> '')) ? '#' . $fragment : '')), $markup);
+  return str_replace(array($prefix_url . '/from_search/', $m[2]),
+                     array('', $prefix_url . '/from_search/' . $skey . ((isset($fragment) && ($fragment <> '')) ? '#' . $fragment : '')), $markup);
 }
 
 function _inject_skey($url, $PID, $skey) {
