@@ -908,8 +908,10 @@ function _islandora_solr_pid_parent_search($child_object, $solr_fields, $options
         }
         if ($found) {
           $added_fields[] = $key;
-          foreach ($found as $v) {
-            $results[$key][] = $v;
+          if (is_array($found)) {
+            foreach ($found as $v) {
+              $results[$key][] = $v;
+            }
           }
         }
       }
