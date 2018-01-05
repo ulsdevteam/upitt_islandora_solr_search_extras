@@ -360,6 +360,10 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
           // $options['fragment'] = '';
           $options['fragment'] = upitt_islandora_solr_search_extras_fix_fragment_using_catch_all_fields_of_current_search($object_results[$k]['object_url_fragment']);
           $object_results[$k]['object_url_fragment'] = $options['fragment'];
+        } elseif (stristr($object_results[$k]['content_models'][0], 'BookCModel') || stristr($object_results[$k]['content_models'][0], 'NewspaperIssueCModel') || 
+             stristr($object_results[$k]['content_models'][0], 'ManuscriptCModel')) {
+          $options['fragment'] = upitt_islandora_solr_search_extras_fix_fragment_using_catch_all_fields_of_current_search('page/1/mode/2up');
+          $object_results[$k]['object_url_fragment'] = $options['fragment'];
         }
 
         $link_options = $options;
