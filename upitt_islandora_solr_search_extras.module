@@ -401,14 +401,16 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
     }
 
     // Set title link depending on what got set for the thumbnail
-    if (count($link_options) > 0) {
-      $object_results[$k]['solr_doc']['dc.title']['value'] = l(strip_tags($object_results[$k]['solr_doc']['dc.title']['value']), $link_title_path, $link_options);
-    }
-    if (isset($object_results[$k]['solr_doc']['dc.title']) && isset($object_results[$k]['solr_doc']['dc.title']['value']) && isset($object_results[$k]['object_url_fragment'])) {
-      $object_results[$k]['solr_doc']['dc.title']['value'] = upitt_islandora_solr_search_extras_inject_skey_to_markup($link_title_path, $object_results[$k]['solr_doc']['dc.title']['value'], $object_results[$k]['PID'], $skey . '-' . ($elements['solr_start'] + $k), $object_results[$k]['object_url_fragment']);
-    }
-    elseif (isset($object_results[$k]['solr_doc']['dc.title']) && isset($object_results[$k]['solr_doc']['dc.title']['value'])) {
-      $object_results[$k]['solr_doc']['dc.title']['value'] = upitt_islandora_solr_search_extras_inject_skey_to_markup($link_title_path, $object_results[$k]['solr_doc']['dc.title']['value'], $object_results[$k]['PID'], $skey . '-' . ($elements['solr_start'] + $k), '');
+    if (array_key_exists('dc.title', $object_results[$k]['solr_doc'])) {
+      if (count($link_options) > 0) {
+        $object_results[$k]['solr_doc']['dc.title']['value'] = l(strip_tags($object_results[$k]['solr_doc']['dc.title']['value']), $link_title_path, $link_options);
+      }
+      if (isset($object_results[$k]['solr_doc']['dc.title']) && isset($object_results[$k]['solr_doc']['dc.title']['value']) && isset($object_results[$k]['object_url_fragment'])) {
+        $object_results[$k]['solr_doc']['dc.title']['value'] = upitt_islandora_solr_search_extras_inject_skey_to_markup($link_title_path, $object_results[$k]['solr_doc']['dc.title']['value'], $object_results[$k]['PID'], $skey . '-' . ($elements['solr_start'] + $k), $object_results[$k]['object_url_fragment']);
+      }
+      elseif (isset($object_results[$k]['solr_doc']['dc.title']) && isset($object_results[$k]['solr_doc']['dc.title']['value'])) {
+        $object_results[$k]['solr_doc']['dc.title']['value'] = upitt_islandora_solr_search_extras_inject_skey_to_markup($link_title_path, $object_results[$k]['solr_doc']['dc.title']['value'], $object_results[$k]['PID'], $skey . '-' . ($elements['solr_start'] + $k), '');
+      }
     }
 
     // 1. Add the page number if applicable
@@ -465,6 +467,7 @@ function _get_skey($solr_results) {
   if (!isset($solr_results['responseHeader']['params'])) {
     return '';
   }
+  $collection_object = NULL;
   $skey = NULL;
   $results_per_page = variable_get('islandora_solr_num_of_results', 20);
   // The skey could come from refer_url if user clicked Return to Search Results.
@@ -508,7 +511,6 @@ function _get_skey($solr_results) {
       $solr_filters[] = 'f[' . $indexer . ']=' . $q;
     }
     elseif ($search && $search <> '/islandora/search') {
-      $collection_object = NULL;
       if (strstr($search, ':')) {
         $solr_filters[] = 'f[' . $indexer . ']=' . $search;
       } else {
@@ -636,6 +638,7 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
     return;
   }
   $qf = '';
+  $collection_object = NULL;
   // See if this is a collection page
   $collection_pid = (isset($_GET['q']) && strstr('islandora/search_collection/', $_GET['q'])) ? str_replace('islandora/search_collection/', '', $_GET['q']): NULL;
   if ($solr_url) {
@@ -661,7 +664,9 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
           if ($param == 'dismax' && $search) {
           }
           else {
-            $q_arr[] = $param;
+            if ($param) {
+              $q_arr[] = $param;
+            }
           }
         }
         else { //### $qf = $param;
@@ -712,7 +717,6 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
           $q_arr[] = $q;
         }
       } else {
-        $collection_object = NULL;
         if (strstr($search, ':')) {
           $solr_filters[] = 'f[' . $filter_index . ']=' . $search;
           $q_arr[] = $search;
@@ -917,6 +921,9 @@ function _islandora_solr_pid_parent_search($child_object, $solr_fields, $options
               $results[$key][] = $v;
             }
           }
+          else {
+            $results[$key][] = $found;
+          }
         }
       }
 
@@ -925,8 +932,13 @@ function _islandora_solr_pid_parent_search($child_object, $solr_fields, $options
         foreach ($keys as $key) {
           if (!array_search($key, $added_fields)) {
             $value = is_array($trip[$key]) ? array($trip[$key][0]) : $trip[$key];
-            foreach ($value as $v) {
-              $results[$key][] = $v;
+            if (is_array($value)) {
+              foreach ($value as $v) {
+                $results[$key][] = $v;
+              }
+            }
+            elseif (is_array($results[$key]) && $results[$key][0] <> $value) {
+              $results[$key][] = $value;
             }
           }
         }
