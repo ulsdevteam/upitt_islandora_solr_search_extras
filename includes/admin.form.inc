@@ -123,7 +123,6 @@ function _map_url_alias_for_collection_pages() {
     error_log('EXCEPTION in _map_url_alias_for_collection_pages : called from ' . $_SERVER['SERVER_NAME'] .
 ' - ' . $_SERVER['REQUEST_URI'] . '
 ' . print_r($e, true));
-    $skey = '';
   }
   return;
 }

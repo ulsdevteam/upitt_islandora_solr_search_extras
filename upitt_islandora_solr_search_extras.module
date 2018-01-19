@@ -250,11 +250,11 @@ function upitt_islandora_solr_search_extras_islandora_pageCModel_islandora_solr_
 function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_results) {
   global $_islandora_solr_queryclass;
 
-  // The skey value will need to be written into the links for pages as handled by
-  // /islandora/object/%islandora_object/from_search/% menu route above.
   module_load_include('inc', 'islandora_solr', 'includes/utilities');
   module_load_include('inc', 'upitt_islandora_solr_search_extras', 'includes/utilities');
 
+  // The skey value will need to be written into the links for pages as handled by
+  // /islandora/object/%islandora_object/from_search/% menu route above.
   $skey = _get_skey($solr_results);
 
 //  // Load collections from memcache
@@ -460,8 +460,8 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
 }
 
 function _get_skey($solr_results) {
+  // delete records older than CST_SESSION_LIFETIME
   $lastmod_limit = time() - CST_SESSION_LIFETIME;
-  $filter_index = 0;
   db_query('DELETE FROM {solr_search_skey_results} WHERE skey IN (SELECT skey FROM {solr_search_sessions} WHERE lastmod < :lastmod_limit)', array(':lastmod_limit' => $lastmod_limit));
   db_query('DELETE FROM {solr_search_sessions WHERE lastmod < :lastmod_limit', array(':lastmod_limit' => $lastmod_limit));
   if (!isset($solr_results['responseHeader']['params'])) {
@@ -497,7 +497,7 @@ function _get_skey($solr_results) {
     $indexer = 0;
     if (isset($solr_results['responseHeader']['params']['fq']) && is_array($solr_results['responseHeader']['params']['fq'])) {
       foreach ($solr_results['responseHeader']['params']['fq'] as $k=>$filter) {
-        if (array_search($filter, $used_filters) === FALSE) {
+        if (array_search($filter, $used_filters) === FALSE && $filter) {
           $solr_filters[] = 'f[' . $indexer . ']=' . $filter;
           $used_filters[] = $filter;
           $indexer++;
@@ -510,25 +510,18 @@ function _get_skey($solr_results) {
       $q = 'RELS_EXT_isMemberOfCollection_uri_ms:*' . islandora_solr_lesser_escape($pid);
       $solr_filters[] = 'f[' . $indexer . ']=' . $q;
     }
-    elseif ($search && $search <> '/islandora/search') {
-      if (strstr($search, ':')) {
-        $solr_filters[] = 'f[' . $indexer . ']=' . $search;
-      } else {
-        //### $solr_filters[] = 'qf=' . $search;
-      }
-    }
     if ($is_dismax && $search) {
       // $solr_filters[] = 'q=catch_all_fields_mt:' . $search;
     }
     if ($sort_field) {
       $solr_filters[] = 'sort=' . $sort_field;
     }
+
     // Generate the effective search URL conditionally based on whether or not the search is on a collection object, or if search is dismax.
     $solr_url = (($collection_object) ? _format_collection_url($collection_object->label, TRUE) . '/' : '/islandora/search/') . '?islandora_solr_search_navigation=0&' . implode('&', $solr_filters);
     if ($is_dismax) {
       $solr_url = (strstr($solr_url, "?") ? str_replace("?", $search . "?type=dismax&", $solr_url) : $solr_url . '?type=dismax');
     }
-
     $skey = db_query('SELECT s.skey FROM {solr_search_sessions} s JOIN {solr_search_skey_results} r ON (r.skey = s.skey) WHERE s.solr_search_url = :u', array(':u' => $solr_url))->fetchField();
     if (!$skey) {
       $skey = md5(date('c'));
@@ -639,6 +632,7 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
   }
   $qf = '';
   $collection_object = NULL;
+  $q_arr = array();
   // See if this is a collection page
   $collection_pid = (isset($_GET['q']) && strstr('islandora/search_collection/', $_GET['q'])) ? str_replace('islandora/search_collection/', '', $_GET['q']): NULL;
   if ($solr_url) {
@@ -698,7 +692,7 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
     $filter_index = 0;
     if (is_array($solr_results['responseHeader']['params']['fq']) && count($solr_results['responseHeader']['params']['fq']) > 0) {
       foreach ($solr_results['responseHeader']['params']['fq'] as $k=>$filter) {
-        if (array_search($filter, $used_filters) === FALSE) {
+        if (array_search($filter, $used_filters) === FALSE && $filter) {
           $solr_filters[] = 'f[' . $filter_index . ']=' . $filter;
           $q_arr[] = $filter;
           $filter_index++;
