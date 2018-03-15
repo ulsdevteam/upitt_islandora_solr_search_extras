@@ -601,13 +601,13 @@ function upitt_islandora_solr_search_extras_fix_fragment_using_catch_all_fields_
   @list($search, $junk) = explode("?", $search_url);
   $search = str_replace('islandora/search/', '', $search);
   $parts = explode("&", urldecode($search));
-  $catch_all_term = '';
+  $catch_all_term = $original_catch_all_raw_value = '';
   foreach ($parts as $part) {
     if (strstr($part, "catch_all_fields_mt:")) {
-      $catch_all_term = str_replace(array("catch_all_fields_mt:", ")", "(", '"', " "), array("","","","","+"), $part);
+      $original_catch_all_raw_value = $part;
+      $catch_all_term = str_replace(array("catch_all_fields_mt:", ")", "(", '"', " "), array("","","","%22","+"), $part);
     }
   }
-
   if (strstr($object_url_fragment, "/search/")) {
     @list($object_url_fragment, $junk) = explode("/search/", $object_url_fragment);
   }
@@ -1368,15 +1368,25 @@ function ead_highlight_search_terms($content) {
   // Check the referring page.
   $from = $_SERVER['HTTP_REFERER'];
   if ($from && strstr($from, '/islandora/search') ) {
+    // If this is a phrase, the code below will need to highlight the entire phrase only --
+    // else it will break the words aparts at the spaces and highlight each word wherever it appears.
+    $is_phrase = (strstr("%22", $from) <> '') || (strstr('"', $from) <> '');
+    // Remove the leading `catch_all_fields_mt:("` and trailing `")`
+    $from = str_replace(array('catch_all_fields_mt%3A%28%22', '%22%29'), "", $from);
     // Look at the search page that this came from, and parse the search terms from that uri.
     @list($junk, $keep) = explode('/islandora/search/', urldecode($from));
     @list($words_string, $junk) = explode("?", $keep); 
 
     if ($words_string <> '') {
       module_load_include('inc', 'upitt_islandora_solr_search_extras', 'includes/search_highlighting');
-      $words = explode(" ", $words_string);
-      foreach ($words as $word) {
-        $content = upitt_islandora_solr_search_extras_str_highlight($content, $word);
+      if ($is_phrase) {
+        $content = upitt_islandora_solr_search_extras_str_highlight($content, $words_string);
+      }
+      else {
+        $words = explode(" ", $words_string);
+        foreach ($words as $word) {
+          $content = upitt_islandora_solr_search_extras_str_highlight($content, $word);
+        }
       }
       return $content;
     }
