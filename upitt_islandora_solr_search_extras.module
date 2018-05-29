@@ -695,6 +695,7 @@ function _save_solr_search_session(&$skey, $solr_results, $solr_url = '', $offse
         $q = ((count($q_arr) > 0) ? '(' : '') . implode(') AND (', $q_arr) . ((count($q_arr) > 0) ? ')' : '');
       }
     }
+    $sort_field = '';
   }
   else {
     $request_uri = urldecode(str_replace('/islandora/search/', '', $_SERVER['REQUEST_URI']));
