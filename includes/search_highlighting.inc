@@ -71,7 +71,7 @@ function upitt_islandora_solr_search_extras_str_highlight($text, $needle, $optio
       $text = preg_replace($sl_regex, '\1', $text);
     }
 
-    $regex = sprintf($pattern, $needle_s);
+    $regex = sprintf($pattern, str_replace("#", '\#', $needle_s));
     $text = preg_replace($regex, $highlight, $text);
   }
 

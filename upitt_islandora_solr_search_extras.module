@@ -1375,7 +1375,10 @@ function ead_highlight_search_terms($content) {
     // else it will break the words aparts at the spaces and highlight each word wherever it appears.
     $is_phrase = (strstr("%22", $from) <> '') || (strstr('"', $from) <> '');
     // Remove the leading `catch_all_fields_mt:("` and trailing `")`
-    $from = str_replace(array('catch_all_fields_mt%3A%28%22', '%22%29'), "", $from);
+    $from = str_replace(array(
+      'catch_all_fields_mt%3A%28%22', '%22%29', 'catch_all_fields_mt%3A%28', '%29', 'catch_all_fields_mt:', ')'),
+      "",
+      $from);
     // Look at the search page that this came from, and parse the search terms from that uri.
     @list($junk, $keep) = explode('/islandora/search/', urldecode($from));
     @list($words_string, $junk) = explode("?", $keep); 
