@@ -1400,3 +1400,14 @@ function ead_highlight_search_terms($content) {
   // else, the code will fall through and simply return what was passed for $content.
   return $content;
 }
+
+// Used by the islandora_digital_workflow module to override the links to
+// collections based on our view handler for collections.
+function upitt_islandora_solr_search_extras_islandora_digital_workflow_collection_links_alter(&$collection_link, $context) {
+  // $context = array('collection_object' => $collection_object);
+  $collection_object = array_key_exists('collection_object', $context) ?
+      $context['collection_object'] : NULL;
+  if ($collection_object) {
+    $collection_link = l($collection_object->label, 'islandora/search_collection/' . $collection_object->id);
+  }
+}
