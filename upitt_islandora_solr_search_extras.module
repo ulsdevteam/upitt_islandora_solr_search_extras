@@ -365,6 +365,13 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
           $object_results[$k]['object_url_fragment'] = $options['fragment'];
         } elseif (stristr($object_results[$k]['content_models'][0], 'BookCModel') || stristr($object_results[$k]['content_models'][0], 'NewspaperIssueCModel') || 
              stristr($object_results[$k]['content_models'][0], 'ManuscriptCModel')) {
+          // ISLANDORA-300 -- stash this logic
+          // If the underlying object is a paged content object (it would have an
+          // object_url_fragment value and code should make the url go to the
+          // islandora/object/{PID}/viewer handler so that the bookreader is triggered.
+          // NOTE: this is causing the bookreader javascript to throw an error and never resolve finding the search terms.
+          $object_results[$k]['object_url'] = '/islandora/object/' . urlencode($object_results[$k]['PID']) . '/viewer';
+
           $options['fragment'] = upitt_islandora_solr_search_extras_fix_fragment_using_catch_all_fields_of_current_search('page/1/mode/2up');
           $object_results[$k]['object_url_fragment'] = $options['fragment'];
         }
