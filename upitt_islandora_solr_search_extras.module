@@ -28,6 +28,7 @@ function upitt_islandora_solr_search_extras_menu() {
       'file' => 'includes/admin.form.inc',
     ),
     // solr search sessions handling
+/* ISLANDORA-300 
     'islandora/object/%islandora_object/from_search/%' => array(
       'title callback' => 'upitt_islandora_solr_search_extras__islandora_drupal_title',
       'title arguments' => array(2),
@@ -37,6 +38,7 @@ function upitt_islandora_solr_search_extras_menu() {
       'access callback' => 'upitt_islandora_solr_search_extras__islandora_object_access_callback',
       'access arguments' => array(ISLANDORA_VIEW_OBJECTS, 2),
     ),
+*/
     // handler for search in collection using the islandora_solr code
     'islandora/search_collection/%islandora_object' => array(
       'title arguments' => array(2),
@@ -255,7 +257,7 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
 
   // The skey value will need to be written into the links for pages as handled by
   // /islandora/object/%islandora_object/from_search/% menu route above.
-  $skey = _get_skey($solr_results);
+  $skey = ''; // _get_skey($solr_results);
 
 //  // Load collections from memcache
 //  $collections = cache_get('ioc__collectionCModel', 'cache');
@@ -330,7 +332,8 @@ function upitt_islandora_solr_search_extras_islandora_solr_printResults($solr_re
     // Update the default thumbnail URI depending on whether or not it is set for this object.
     _updateDefaultThumbnail($object_results[$k]);
 
-    $object_results[$k]['object_url'] = _inject_skey($object_results[$k]['object_url'], $object_results[$k]['PID'], $skey . '-' . ($elements['solr_start'] + $k));
+// ISLANDORA-300
+//    $object_results[$k]['object_url'] = _inject_skey($object_results[$k]['object_url'], $object_results[$k]['PID'], $skey . '-' . ($elements['solr_start'] + $k));
     if ((isset($object_results[$k]['datastreams']))) {
       $link_options = NULL;
       $link_title_path = '';
@@ -588,6 +591,8 @@ function _format_collection_url($fedora_label, $alias = FALSE) {
 }
 
 function upitt_islandora_solr_search_extras_inject_skey_to_markup($link_title_path, $markup, $PID, $skey, $fragment) {
+  // ISLANDORA-300
+  return $markup;
   // Since these solr results are also rendered on a collection page, only inject if result is for the search page!
   if (!$skey) {
     return $markup;
