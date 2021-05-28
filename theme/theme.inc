@@ -132,7 +132,7 @@ function _my_theme_solr_block($block, $block_module, $block_delta, $block_subjec
 <div id="' . drupal_html_id('block-islandora-solr-' . $block_delta) . '" class="block block-islandora-solr">
   <h2>' . $block_subject . '</h2>' .
 '  <div class="content">
-    ' . $block['content'] .
+    ' . if(isset($block['content']){$block['content']} .
 '  </div>
 </div> 
 ';
